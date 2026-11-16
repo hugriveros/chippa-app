@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.vercel/
+.qa/
+chippa-deploy.zip
+/imagenes de referencia chippa/
+/.sites-checkout/
