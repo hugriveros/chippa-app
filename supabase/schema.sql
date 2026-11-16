@@ -360,8 +360,8 @@ begin
 end;
 $$;
 
-revoke all on function public.create_experience_invitation(uuid) from public;
-revoke all on function public.accept_experience_invitation(text) from public;
+revoke all on function public.create_experience_invitation(uuid) from public, anon;
+revoke all on function public.accept_experience_invitation(text) from public, anon;
 revoke all on function public.is_experience_participant(uuid, uuid) from public, anon;
 revoke all on function public.is_experience_creator(uuid) from public, anon;
 revoke all on function public.is_share_projection_ready(uuid, uuid, jsonb) from public, anon, authenticated;
