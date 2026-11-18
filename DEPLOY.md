@@ -4,12 +4,12 @@ CHIPPA se publica como aplicación estática de Vite en Vercel. El inicio de ses
 
 ## Supabase
 
-1. Crea un proyecto y habilita Email en Authentication → Sign In / Providers.
+1. Crea un proyecto, habilita Email en Authentication → Sign In / Providers y desactiva **Confirm email** en los ajustes del proveedor Email. Así, Supabase crea la sesión al registrarse sin exigir validación del correo.
 2. En un proyecto nuevo, ejecuta [`supabase/schema.sql`](./supabase/schema.sql) en el SQL Editor. Si CHIPPA ya tenía el esquema base instalado, ejecuta [`supabase/friends.sql`](./supabase/friends.sql) para agregar amigos, invitaciones y encuentros.
 3. En Authentication → URL Configuration configura:
    - **Site URL:** URL definitiva de CHIPPA.
    - **Redirect URLs:** URL exacta de producción, `https://*-<team-o-cuenta>.vercel.app/**` para previsualizaciones de Vercel y `http://localhost:5173/**` para desarrollo.
-4. Para enviar confirmaciones a cualquier correo, configura un proveedor SMTP propio y revisa las plantillas con el dominio publicado. El SMTP compartido de Supabase no está pensado para usuarios de producción.
+4. Con **Confirm email** desactivado, no se envían correos de confirmación. Las cuentas podrán registrarse con cualquier dirección y entrar de inmediato.
 
 La aplicación solo necesita la URL del proyecto y su clave publicable/anon. Nunca configures una clave `service_role` o `sb_secret_` en Vercel ni en el navegador.
 
@@ -25,7 +25,7 @@ La aplicación solo necesita la URL del proyecto y su clave publicable/anon. Nun
 
 3. El proyecto usa `vercel.json`: compila con `npm run check:deploy && npm run build` y publica `dist/`. La comprobación detiene el build si faltan las variables o si detecta una clave secreta.
 4. Agrega el dominio de CHIPPA en Vercel → Settings → Domains. Copia ese dominio a **Site URL** de Supabase y vuelve a desplegar después de cambiar variables.
-5. Valida registro, confirmación de correo, dos cuentas, invitaciones, fotos privadas y acceso al historial antes de compartir el sitio.
+5. Valida registro sin confirmación de correo, inicio de sesión, dos cuentas, invitaciones, fotos privadas y acceso al historial antes de compartir el sitio.
 
 Las variables Vite se incorporan al compilar; cualquier cambio requiere un nuevo deployment. La clave publicable/anon puede quedar visible en el navegador: la seguridad de los datos depende de las políticas RLS y del esquema instalado.
 

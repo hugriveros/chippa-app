@@ -6,7 +6,7 @@ Aplicación para conectar con amigos, crear encuentros compartidos, jugar y guar
 
 1. Instala Node.js 20.19+ o 22.12+.
 2. Copia `.env.example` a `.env.local` y completa `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY` con la URL del proyecto y su clave publicable/anon.
-3. En Supabase, habilita Email en Authentication → Sign In / Providers y ejecuta [`supabase/schema.sql`](./supabase/schema.sql) en SQL Editor.
+3. En Supabase, habilita Email en Authentication → Sign In / Providers y desactiva **Confirm email** en los ajustes del proveedor Email para permitir el registro sin validar el correo. Luego ejecuta [`supabase/schema.sql`](./supabase/schema.sql) en SQL Editor.
 4. Inicia la aplicación:
 
    ```bash
