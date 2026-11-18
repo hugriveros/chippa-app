@@ -5,7 +5,7 @@ import {
 import { loadDemoState, resetDemoState, saveDemoState } from './lib/demoStore.js';
 import { supabaseConfigured, supabase } from './lib/supabase.js';
 import {
-  createCloudExperience, ensureProfile, joinCloudExperience, loadCloudState, makeCloudInvitation,
+  createCloudExperience, ensureProfile, joinCloudExperience, loadCloudState,
   leaveCloudExperience, signIn, signOut, signUp
 } from './lib/cloudStore.js';
 import ExperienceModule from './ExperienceModule.jsx';
@@ -21,7 +21,6 @@ import { activityStatus, completionRecord, loadSimulatedPremium, premiumKey } fr
 
 const groupOrder = ['Revive la cita', 'Juegos', 'Cartas', 'Aventuras', 'Conózcanse', 'Guarden recuerdos'];
 const emptyMember = () => ({ moment: {}, same: {}, stories: {}, trivia: {}, letters: [], questions: [], future: [], preferences: {}, votes: {} });
-const newInvitation = () => `CH-${Math.random().toString(36).slice(2, 6).toUpperCase()}-${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
 const CHISPOSITA_CIRCLE_ICON = '/assets/chippa/chisposita-circulo.png';
 
 function ExperienceMark({ value, fallback = '💫' }) {
@@ -100,8 +99,8 @@ function App() {
         try {
           const loaded = await loadCloudState(data.session.user);
           if (!alive) return;
-          if (loaded) { hydrateCloudState(loaded, data.session.user); setPage(!loaded.experience?.id ? 'friends' : 'dashboard'); }
-          else setPage('friends');
+          if (loaded) { hydrateCloudState(loaded, data.session.user); setPage(!loaded.experience?.id ? 'outings' : 'dashboard'); }
+          else setPage('outings');
         } catch (loadError) { notify(loadError.message || 'No pudimos cargar tus experiencias.'); setPage('welcome'); }
       }
       if (alive) setAuthReady(true);
@@ -115,8 +114,8 @@ function App() {
           await acceptPendingInvite(session.user);
           const loaded = await loadCloudState(session.user);
           if (!alive) return;
-          if (loaded) { hydrateCloudState(loaded, session.user); setPage(!loaded.experience?.id ? 'friends' : 'dashboard'); }
-          else setPage('friends');
+          if (loaded) { hydrateCloudState(loaded, session.user); setPage(!loaded.experience?.id ? 'outings' : 'dashboard'); }
+          else setPage('outings');
         } catch (error) { notify(error.message || 'No pudimos abrir esta invitación.'); setPage('friends'); }
       }, 0);
     });
@@ -126,6 +125,14 @@ function App() {
   const currentUser = useMemo(() => state?.participants?.find((person) => person.id === state.activeUserId) || state?.participants?.[0], [state]);
   const partner = useMemo(() => state?.participants?.find((person) => person.id !== currentUser?.id), [state, currentUser]);
   const currentMember = state?.memberData?.[state?.activeUserId] || emptyMember();
+  const outingEntries = useMemo(() => {
+    if (!state) return [];
+    const entries = state.mode === 'cloud'
+      ? [...(state.experienceOptions || []), ...(state.experience?.id ? [state.experience] : [])]
+      : [...(state.experience?.id ? [state.experience] : []), ...(state.experienceArchives || []).map((entry) => entry.experience)];
+    return [...new Map(entries.filter((entry) => entry?.id).map((entry) => [entry.id, entry])).values()]
+      .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  }, [state]);
   const socialContext = useRef({ currentUser, state });
   socialContext.current = { currentUser, state };
 
@@ -200,14 +207,14 @@ function App() {
     return () => { window.removeEventListener('focus', refresh); window.removeEventListener('storage', refresh); window.removeEventListener('online', refresh); document.removeEventListener('visibilitychange', refresh); if (channel) supabase.removeChannel(channel); };
   }, [currentUser?.id, state?.mode, refreshFriends]);
   const newMeetingWith = (friend) => { setMeetingFriend(friend); setShowExperienceForm(true); };
+  const openNewOuting = () => { setMeetingFriend(null); setShowExperienceForm(true); setShowExperienceMenu(false); };
 
   const startLocalPreview = () => {
     setCloudUser(null);
     const demo = loadDemoState();
-    if (demo.experience && !demo.experience.invitationCode) demo.experience.invitationCode = newInvitation();
     saveDemoState(demo);
     setState(demo);
-    setPage(!demo.experience?.id ? 'friends' : 'dashboard');
+    setPage(!demo.experience?.id ? 'outings' : 'dashboard');
     notify('Tu espacio está listo en este dispositivo.');
   };
 
@@ -215,7 +222,7 @@ function App() {
     if (!supabaseConfigured) {
       if (import.meta.env.PROD) { notify('El acceso a CHIPPA todavía se está preparando.'); return; }
       const next = authMode === 'login' ? loadDemoState() : createEmptyState({ id: `local-${crypto.randomUUID()}`, name: form.name.trim(), avatar: form.avatar || avatars[0] });
-      setCloudUser(null); setState(next); saveDemoState(next); setPage('friends');
+      setCloudUser(null); setState(next); saveDemoState(next); setPage('outings');
       return;
     }
     setBusy(true);
@@ -228,32 +235,36 @@ function App() {
         setUser(authUser);
         await acceptPendingInvite(authUser);
         const loaded = await loadCloudState(authUser);
-        if (loaded) { hydrateCloudState(loaded, authUser); setPage(!loaded.experience?.id ? 'friends' : 'dashboard'); } else setPage('friends');
+        if (loaded) { hydrateCloudState(loaded, authUser); setPage(!loaded.experience?.id ? 'outings' : 'dashboard'); } else setPage('outings');
       }
     } catch (error) { notify(error.message || 'No pudimos continuar. Revisa tus datos.'); }
     finally { setBusy(false); }
   };
 
   const createExperience = async (form) => {
-    if (!meetingFriend) { setPage('friends'); return; }
+    const { friendId, ...experienceForm } = form;
+    const selectedFriend = friendId
+      ? (social.connections || []).find((person) => person.id === friendId) || (meetingFriend?.id === friendId ? meetingFriend : null)
+      : null;
     if (state?.mode === 'cloud' || (!state && user && supabaseConfigured)) {
       setBusy(true);
       try {
-        const created = await createCloudExperience(user.id, form, meetingFriend.id);
+        const created = await createCloudExperience(experienceForm, selectedFriend?.id || null);
         const loaded = await loadCloudState(user, created.id);
         if (loaded) hydrateCloudState(loaded, user);
         else setState({ ...state, experience: { ...created, status: 'active' }, mode: 'cloud' });
         setShowExperienceForm(false);
+        setMeetingFriend(null);
         setPage('dashboard');
-        notify('Encuentro creado para los dos.');
+        notify(selectedFriend ? `Salida creada con ${selectedFriend.name}.` : 'Salida creada para ti.');
       } catch (error) { notify(error.message || 'No pudimos crear la experiencia.'); }
       finally { setBusy(false); }
       return;
     }
-    const experience = { ...form, id: `demo-${Date.now()}`, status: 'active', createdBy: state?.activeUserId, invitationCode: newInvitation(), invitationAccepted: true };
+    const experience = { ...experienceForm, id: `demo-${Date.now()}`, status: 'active', createdBy: state?.activeUserId, invitationAccepted: Boolean(selectedFriend) };
     update((previous) => {
       const archive = previous.experience?.title ? [{ experience: previous.experience, memberData: previous.memberData, shared: previous.shared, participants: previous.participants }] : [];
-      const people = [currentUser, meetingFriend];
+      const people = selectedFriend ? [currentUser, selectedFriend] : [currentUser];
       const newMembers = Object.fromEntries(people.map((person) => [person.id, emptyMember()]));
       return {
         ...previous,
@@ -261,12 +272,13 @@ function App() {
         participants: people,
         memberData: newMembers,
         experienceArchives: [...archive, ...(previous.experienceArchives || [])],
-        shared: { ...emptyShared(), stamps: [form.place] }
+        shared: { ...emptyShared(), stamps: [experienceForm.place] }
       };
     });
     setShowExperienceForm(false);
+    setMeetingFriend(null);
     setPage('dashboard');
-    notify('¡Nuevo lugar para su colección!');
+    notify(selectedFriend ? `Salida creada con ${selectedFriend.name}.` : 'Salida creada para ti.');
   };
 
   const selectExperience = async (experienceId) => {
@@ -291,28 +303,6 @@ function App() {
     setPage('dashboard');
   };
 
-  const invitePartner = async () => {
-    if (!state) return;
-    if (state.mode === 'cloud') {
-      try {
-        const code = await makeCloudInvitation(state.experience.id);
-        const link = `${window.location.origin}${window.location.pathname}?invite=${encodeURIComponent(code)}`;
-        await navigator.clipboard.writeText(link);
-        update((previous) => ({ ...previous, experience: { ...previous.experience, invitationCode: code } }));
-        notify('Enlace de invitación copiado.');
-      } catch (error) { notify(error.message || 'No pudimos crear el enlace.'); }
-      return;
-    }
-    const code = state.experience?.invitationCode || newInvitation();
-    const link = `${window.location.origin}${window.location.pathname}?invite=${encodeURIComponent(code)}`;
-    try { await navigator.clipboard.writeText(link); notify('Enlace copiado. Para conectar otro dispositivo, abre el enlace e inicia sesión.'); }
-    catch { notify(`Código de invitación: ${code}`); }
-  };
-
-  const acceptDemoInvite = () => {
-    update((previous) => ({ ...previous, experience: { ...previous.experience, invitationAccepted: true } }));
-    notify('¡Acompañante vinculado en este dispositivo!');
-  };
 
   const logout = async () => {
     if (state?.mode === 'demo') {
@@ -339,7 +329,7 @@ function App() {
       await leaveCloudExperience(state.experience.id, user.id);
       const next = await loadCloudState(user);
       if (next) { hydrateCloudState(next, user); setPage('dashboard'); }
-      else { setState(null); setPage('friends'); }
+      else { setState(null); setPage('outings'); }
       notify('Saliste de esta experiencia.');
     } catch (error) { notify(error.message || 'No pudimos salir de la experiencia.'); }
   };
@@ -347,13 +337,13 @@ function App() {
   const showPremiumNotice = (id = 'capsule') => setPremiumItem(modules.find((item) => item.id === id) || { id: 'subscription', title: 'CHIPPA Premium' });
   const changePage = (next) => {
     if (next === 'friends') setFriendsVersion((version) => version + 1);
-    if (!state.experience?.id && !['friends','dashboard'].includes(next)) { setPage('friends'); notify('Crea un encuentro con un amigo para empezar.'); return; }
+    if (!state.experience?.id && !['friends','dashboard','outings'].includes(next)) { setPage('outings'); notify('Crea una salida para empezar.'); return; }
     if (next === 'games') setGamesFilter('Todos');
     if (!premiumActive && next === 'capsule' && modules.some((item) => item.id === 'capsule' && item.premium)) { showPremiumNotice(); return; }
     setPage(next); setProfileMenu(false);
   };
   const openModule = (id) => {
-    if (!state.experience?.id) { setPage('friends'); notify('Elige un amigo y crea un encuentro para empezar.'); return; }
+    if (!state.experience?.id) { setPage('outings'); notify('Crea una salida para empezar.'); return; }
     if (!premiumActive && modules.some((item) => item.id === id && item.premium)) { showPremiumNotice(id); return; }
     setModuleId(id); setPage('module');
   };
@@ -372,8 +362,8 @@ function App() {
     <div className="app-main">
       <header className="topbar">
         <button className="mobile-brand" onClick={() => setPage('dashboard')} aria-label="Ir al inicio de Chippa"><img src="/assets/chippa/brand.png" alt="CHIPPA" /></button>
-        <div className="experience-switcher"><button className="experience-switch-button" onClick={() => setShowExperienceMenu((open) => !open)} aria-expanded={showExperienceMenu}><span><ExperienceMark value={state.experience?.emoji} /></span><b>{state.experience?.title || 'Mis encuentros'}</b><i>⌄</i></button>{showExperienceMenu && <div className="experience-menu">{(state.mode === 'cloud' ? state.experienceOptions || [] : [...(state.experience?.id ? [state.experience] : []), ...(state.experienceArchives || []).map((entry) => entry.experience)]).map((item) => <button key={item.id} className={item.id === state.experience?.id ? 'active' : ''} onClick={() => selectExperience(item.id)}><span><ExperienceMark value={item.emoji} /></span><span><b>{item.title}</b><small>{item.place} · {labelDate(item.date)}</small></span></button>)}<button className="new-experience-option" onClick={() => { setShowExperienceMenu(false); setPage('friends'); }}>＋ Registrar otra experiencia</button></div>}</div>
-        <div className="crumb">{page === 'module' ? modules.find((item) => item.id === moduleId)?.title : page === 'friends' ? 'Mis amigos' : page === 'games' ? 'Juegos para dos' : page === 'dashboard' ? 'Nuestra cita' : page === 'results' ? 'Descubramos nuestras respuestas' : page === 'passport' ? 'Pasaporte digital' : 'Cápsula compartida'}</div>
+        <div className="experience-switcher"><button className="experience-switch-button" onClick={() => setShowExperienceMenu((open) => !open)} aria-expanded={showExperienceMenu}><span><ExperienceMark value={state.experience?.emoji} /></span><b>{state.experience?.title || 'Mis salidas'}</b><i>⌄</i></button>{showExperienceMenu && <div className="experience-menu">{outingEntries.map((item) => <button key={item.id} className={item.id === state.experience?.id ? 'active' : ''} onClick={() => selectExperience(item.id)}><span><ExperienceMark value={item.emoji} /></span><span><b>{item.title}</b><small>{item.place} · {labelDate(item.date)}</small></span></button>)}<button className="new-experience-option" onClick={() => setPage('outings')}>Ver todas las salidas</button><button className="new-experience-option" onClick={openNewOuting}>＋ Crear salida</button></div>}</div>
+        <div className="crumb">{page === 'module' ? modules.find((item) => item.id === moduleId)?.title : page === 'friends' ? 'Mis amigos' : page === 'outings' ? 'Mis salidas' : page === 'games' ? 'Juegos para dos' : page === 'dashboard' ? (partner ? 'Nuestra cita' : 'Mi salida') : page === 'results' ? 'Descubramos nuestras respuestas' : page === 'passport' ? 'Pasaporte digital' : 'Cápsula compartida'}</div>
         {state.mode === 'demo' && import.meta.env.DEV && <span className="mode-pill"><span /> Solo este dispositivo</span>}
         {state.mode === 'cloud' && <span className="mode-pill cloud-pill"><span /> Cuenta sincronizada</span>}
         <button className="membership-button" onClick={() => showPremiumNotice('subscription')}>{premiumActive ? '✓ Premium activo' : '✦ Premium'}</button><div className="profile-wrap">
@@ -388,8 +378,9 @@ function App() {
       </header>
       {state.mode === 'demo' && import.meta.env.DEV && <div className="local-storage-notice"><span>ⓘ</span> Los cambios de esta vista se guardan en este dispositivo.</div>}
       {page === 'friends' && <FriendsPage key={`${currentUser.id}:${friendsVersion}`} person={currentUser} state={state} social={social.ownerId === currentUser.id ? social : { connections: [], requests: [], meetings: [] }} loading={friendsLoading} error={friendsError} onRefresh={() => refreshFriends().catch(() => {})} onNewMeeting={newMeetingWith} onOpenMeeting={selectExperience} onToast={notify} />}
-      {page === 'dashboard' && !state.experience?.id && <main className="content"><EmptyFriends title="Tu historia empieza con tus amigos." text="Invita a alguien, conecten y creen juntos su primer encuentro." action="Ver mis amigos" onClick={() => setPage('friends')} /></main>}
-      {page === 'dashboard' && state.experience?.id && <Dashboard premiumActive={premiumActive} state={state} currentUser={currentUser} partner={partner} onOpen={openModule} onPage={changePage} onPremium={showPremiumNotice} onCreate={() => setPage('friends')} onInvite={invitePartner} onAcceptInvite={acceptDemoInvite} localPreview={localPreview} />}
+      {page === 'outings' && <OutingsPage outings={outingEntries} activeId={state.experience?.id} onCreate={openNewOuting} onSelect={selectExperience} />}
+      {page === 'dashboard' && !state.experience?.id && <main className="content"><EmptyFriends title="Tu próxima salida empieza aquí." text="Crea un plan para ti y, si quieres, invita a un amigo después." action="Planear una salida" onClick={openNewOuting} /></main>}
+      {page === 'dashboard' && state.experience?.id && <Dashboard premiumActive={premiumActive} state={state} currentUser={currentUser} partner={partner} onOpen={openModule} onPage={changePage} onPremium={showPremiumNotice} onCreate={openNewOuting} />}
       {page === 'games' && <GamesHub premiumActive={premiumActive} key={gamesFilter} initialFilter={gamesFilter} state={state} onOpen={openModule} onBack={() => setPage('dashboard')} />}
       {page === 'module' && <ExperienceModule
         key={`${state.experience.id}:${moduleId}:${state.activeUserId}`} moduleId={moduleId} state={state} update={update} updateMember={updateMember}
@@ -398,7 +389,7 @@ function App() {
       {page === 'results' && <ResultsPage state={state} onOpen={openModule} onBack={() => setPage('dashboard')} update={update} />}
       {page === 'capsule' && <ExperienceModule moduleId="capsule" state={state} update={update} updateMember={updateMember} currentUser={currentUser} partner={partner} currentMember={currentMember} onBack={() => setPage('dashboard')} onToast={notify} />}
       {page === 'passport' && <ExperienceModule moduleId="passport" state={state} update={update} updateMember={updateMember} currentUser={currentUser} partner={partner} currentMember={currentMember} onBack={() => setPage('dashboard')} onToast={notify} />}
-      {showExperienceForm && meetingFriend && <ExperienceForm friend={meetingFriend} onClose={() => setShowExperienceForm(false)} onSubmit={createExperience} busy={busy} />}
+      {showExperienceForm && <ExperienceForm friend={meetingFriend} friends={social.connections || []} onClose={() => { setShowExperienceForm(false); setMeetingFriend(null); }} onSubmit={createExperience} busy={busy} />}
       <MobileNav premiumActive={premiumActive} page={page} setPage={changePage} openGames={() => changePage('games')} friendRequestCount={pendingFriendRequests} />
       <LegalFooter className="app-legal-footer" onOpen={setLegalDocument} />
     </div>
@@ -484,6 +475,7 @@ function Sidebar({ premiumActive, page, setPage, openModule, state, friendReques
   const quick = [ ['moment', 'Nuestra cita', '📓'], ['same', 'Juegos', '🎮'], ['letters', 'Cartas', '💌'], ['next', 'Aventuras', '🗺️'] ];
   return <aside className="sidebar"><button className="sidebar-brand" onClick={() => setPage('dashboard')} aria-label="Ir al inicio de Chippa"><Brand /></button><div className="experience-chip"><span><ExperienceMark value={state.experience?.emoji} /></span><div><b>{state.experience?.title || 'Tu espacio en CHIPPA'}</b><small>{state.experience?.place || 'Conecta con tus amigos'}</small></div><span className="chip-dots">···</span></div>
     <div className="side-label">LA HISTORIA</div><button className={`side-link ${page === 'dashboard' ? 'active' : ''}`} onClick={() => setPage('dashboard')}><span>▧</span> Inicio</button>
+    <button className={`side-link ${page === 'outings' ? 'active' : ''}`} onClick={() => setPage('outings')}><span>✦</span> Salidas<i>→</i></button>
     <button className={`side-link ${page === 'friends' ? 'active' : ''}`} onClick={() => setPage('friends')}><span>♡</span> Amigos{friendRequestCount > 0 && <i className="friend-nav-badge" aria-label={`${friendRequestCount} solicitudes pendientes`}>{friendRequestCount}</i>}</button>
     <div className="side-label spaced">EXPLORAR</div>{quick.map(([id, title, emoji]) => {
       const premium = !premiumActive && id !== 'same' && modules.some((item) => item.id === id && item.premium);
@@ -496,7 +488,7 @@ function Sidebar({ premiumActive, page, setPage, openModule, state, friendReques
 
 function MobileNav({ premiumActive, page, setPage, openGames, friendRequestCount = 0 }) {
   const items = [
-    ['dashboard', '⌂', 'Inicio', null], ['games', '🎮', 'Juegos', null], ['friends', '♡', 'Amigos', null], ['capsule', '📸', 'Cápsula', 'capsule'], ['passport', '🛂', 'Pasaporte', null]
+    ['dashboard', '⌂', 'Inicio', null], ['outings', '✦', 'Salidas', null], ['games', '🎮', 'Juegos', null], ['friends', '♡', 'Amigos', null], ['capsule', '📸', 'Cápsula', 'capsule'], ['passport', '🛂', 'Pasaporte', null]
   ];
   return <nav className="mobile-nav" aria-label="Navegación principal">{items.map(([target, icon, label, premiumId]) => {
     const premium = !premiumActive && Boolean(premiumId && modules.some((item) => item.id === premiumId && item.premium));
@@ -504,56 +496,86 @@ function MobileNav({ premiumActive, page, setPage, openGames, friendRequestCount
   })}</nav>;
 }
 
-function Dashboard({ premiumActive, state, currentUser, partner, onOpen, onPage, onPremium, onCreate, onInvite, onAcceptInvite, localPreview }) {
+function Dashboard({ premiumActive, state, currentUser, partner, onOpen, onPage, onPremium, onCreate }) {
   const grouped = groupOrder.map((group) => ({ group, items: modules.filter((item) => item.group === group) })).filter((entry) => entry.items.length);
   const doneCount = modules.filter((item) => activityStatus(state, item.id)).length;
   return <main className="content dashboard-content">
     <div className="dashboard-kicker"><span>CAPÍTULO 01</span><i /> <span>{labelDate(state.experience?.date)}</span></div>
     <section className="dashboard-hero">
-      <div className="dashboard-hero-copy"><div className="eyebrow">HOLA, {currentUser.name.toUpperCase()} <span>✦</span></div><h1>Nuestra aventura<br />continúa.</h1><p>La cita terminó, pero su historia todavía tiene páginas por llenar.</p><div className="hero-participants"><span className="participant-avatar"><Avatar value={currentUser.avatar} /></span><span className="participant-avatar overlap"><Avatar value={partner?.avatar} /></span><span>{currentUser.name} + {partner?.name || 'tu acompañante'}</span></div><button className="hero-small-button" onClick={() => onOpen('moment')}>Volver a ese momento <span>→</span></button></div>
+      <div className="dashboard-hero-copy">
+        <div className="eyebrow">{partner ? `HOLA, ${currentUser.name.toUpperCase()}` : 'TU SALIDA, A TU RITMO'} <span>✦</span></div>
+        <h1>{partner ? <>Nuestra aventura<br />continúa.</> : <>Tu salida,<br />tu historia.</>}</h1>
+        <p>{partner ? 'La cita terminó, pero su historia todavía tiene páginas por llenar.' : 'Guarda tus planes y recuerdos. Puedes conectar con un amigo y crear una salida compartida cuando quieras.'}</p>
+        <div className="hero-participants"><span className="participant-avatar"><Avatar value={currentUser.avatar} /></span>{partner && <span className="participant-avatar overlap"><Avatar value={partner.avatar} /></span>}<span>{partner ? `${currentUser.name} + ${partner.name}` : 'Solo tú, por ahora'}</span></div>
+        <button className="hero-small-button" onClick={() => onOpen('moment')}>Volver a ese momento <span>→</span></button>
+      </div>
       <div className="hero-polaroid"><div className="polaroid-image"><img className="polaroid-backdrop" src="/assets/chippa/collage-azul.jpg" alt="" /><img className="polaroid-character polaroid-character-twins" src="/assets/chippa/estrellas-gemelas-gafas-zapatillas.png" alt="Dos estrellas con gafas y zapatillas" /></div><div className="polaroid-under"><img className="polaroid-map-icon" src="/assets/chippa/mapa-pin.png" alt="" /><div><b>{state.experience?.title}</b><small> {state.experience?.place}</small></div></div><div className="polaroid-tape" /></div>
       <div className="hero-seal"><small>Un<br />recuerdo<br />más</small></div>
       <span className="hero-doodle doodle-one">✧</span><span className="hero-doodle doodle-two">♡</span>
     </section>
-    <section className="experience-strip"><div className="experience-meta"><span className="meta-icon"><img src="/assets/chippa/map-icon.png" alt="" /></span><div><small>LUGAR VISITADO</small><b>{state.experience?.place || 'Lugar por agregar'}</b></div></div><div className="meta-divider" /><div className="experience-meta"><span className="meta-icon"><img src="/assets/chippa/calendar-check-transparent.png" alt="" /></span><div><small>FECHA DE LA CITA</small><b>{labelDate(state.experience?.date)}</b></div></div><div className="meta-divider" /><div className="experience-meta"><span className="meta-icon"><img src="/assets/chippa/chat-bubble.png" alt="" /></span><div><small>INVITACIÓN</small><b>{state.experience?.invitationAccepted ? 'Ambos vinculados' : 'Aún pendiente'}</b></div></div><button className="strip-action" onClick={state.experience?.invitationAccepted ? onCreate : onInvite}>{state.experience?.invitationAccepted ? 'Nueva experiencia ↗' : 'Invitar ↗'}</button>{localPreview && !state.experience?.invitationAccepted && <button className="strip-accept" onClick={onAcceptInvite}>Aceptar aquí</button>}</section>
+    <section className="experience-strip"><div className="experience-meta"><span className="meta-icon"><img src="/assets/chippa/map-icon.png" alt="" /></span><div><small>LUGAR DE LA SALIDA</small><b>{state.experience?.place || 'Lugar por agregar'}</b></div></div><div className="meta-divider" /><div className="experience-meta"><span className="meta-icon"><img src="/assets/chippa/calendar-check-transparent.png" alt="" /></span><div><small>FECHA</small><b>{labelDate(state.experience?.date)}</b></div></div><div className="meta-divider" /><div className="experience-meta"><span className="meta-icon"><img src="/assets/chippa/chat-bubble.png" alt="" /></span><div><small>{partner ? 'ACOMPAÑANTES' : 'PLAN PERSONAL'}</small><b>{partner ? 'Salida compartida' : 'Solo para ti'}</b></div></div><button className="strip-action" onClick={partner ? onCreate : () => onPage('friends')}>{partner ? 'Nueva salida →' : 'Conectar con un amigo →'}</button></section>
     <section className="activity-section"><div className="section-heading"><div><div className="eyebrow">ELIGE POR DÓNDE SEGUIR</div><h2>Hay muchas formas de continuar.</h2></div><button className="all-activities" onClick={() => onPage('results')}>Ver resultados <span>↗</span></button></div>
       <div className="activity-groups">{grouped.map(({ group, items }, index) => <div className={`activity-group ${group === 'Juegos' ? 'activity-group-games' : ''}`} key={group}><div className="group-heading"><span className={`group-index index-${index}`}>0{index + 1}</span><h3>{group}</h3><i /></div><div className={`activity-grid ${items.length === 1 ? 'single-card' : ''}`}>{items.map((item) => <ActivityCard premiumActive={premiumActive} key={item.id} item={item} state={state} onOpen={onOpen} />)}</div></div>)}</div>
     </section>
-    <section className="story-progress"><div className="progress-icon">✦</div><div><small>SU HISTORIA EN CONSTRUCCIÓN</small><b>{doneCount} de {modules.length} actividades con timbre CHIPPA</b><div className="progress-track"><span style={{ width: `${Math.min(100, doneCount / modules.length * 100)}%` }} /></div></div><button onClick={() => onPage('capsule')}>Ver cápsula <span>→</span></button></section>
+    <section className="story-progress"><div className="progress-icon">✦</div><div><small>{partner ? 'SU HISTORIA EN CONSTRUCCIÓN' : 'TU HISTORIA EN CONSTRUCCIÓN'}</small><b>{doneCount} de {modules.length} actividades con timbre CHIPPA</b><div className="progress-track"><span style={{ width: `${Math.min(100, doneCount / modules.length * 100)}%` }} /></div></div><button onClick={() => onPage('capsule')}>Ver cápsula <span>→</span></button></section>
   </main>;
 }
 
-function ResultsPage({ state, onOpen, onBack, update }) {
+function OutingsPage({ outings, activeId, onCreate, onSelect }) {
+  return <main className="content outings-page">
+    <header className="outings-heading"><div><div className="eyebrow">TU COLECCIÓN CHIPPA</div><h1>Mis salidas.</h1><p>Todos tus planes y encuentros, en un solo lugar. Cada salida puede ser solo para ti o incluir a un amigo.</p></div><button className="primary-button" onClick={onCreate}>＋ Planear una salida</button></header>
+    <div className="outings-list-heading"><div><div className="eyebrow">LÍNEA DE TIEMPO</div><h2>{outings.length} {outings.length === 1 ? 'salida' : 'salidas'}</h2></div><span>Ordenadas de la más reciente a la más antigua</span></div>
+    {!outings.length ? <EmptyFriends title="Todavía no tienes salidas." text="Crea un plan para ti. Invitar a otra persona es opcional y puedes hacerlo más adelante." action="Crear mi primera salida" onClick={onCreate} /> : <div className="outings-list">
+      {outings.map((outing, index) => {
+        const active = outing.id === activeId;
+        return <button className={`outing-row ${active ? 'active' : ''}`} key={outing.id} onClick={() => onSelect(outing.id)} aria-current={active ? 'true' : undefined}>
+          <span className="outing-index">{String(index + 1).padStart(2, '0')}</span>
+          <span className="outing-mark"><ExperienceMark value={outing.emoji} fallback="✦" /></span>
+          <span className="outing-details"><small>{active ? 'SALIDA ACTUAL' : 'SALIDA GUARDADA'}</small><b>{outing.title}</b><span>{outing.place}</span></span>
+          <time dateTime={outing.date}>{labelDate(outing.date)}</time>
+          <span className="outing-open">{active ? 'Abrir' : 'Ver salida'} <i>→</i></span>
+        </button>;
+      })}
+    </div>}
+  </main>;
+}
+
+function ResultsPage({ state, onOpen, onBack }) {
   const people = state.participants || [];
+  const solo = people.length < 2;
   const tiles = [
     { id: 'same', title: '¿Pensamos lo mismo?', field: 'same' },
     { id: 'story', title: 'Completa nuestra historia', field: 'stories' },
     { id: 'trivia', title: 'Trivia post-cita', field: 'trivia' },
     { id: 'moment', title: 'Nuestro momento', field: 'moment' }
   ];
-  return <main className="content results-page"><button className="back-link" onClick={onBack}>← Volver a la aventura</button><div className="eyebrow">DOS PERSPECTIVAS, UNA HISTORIA</div><h1>Descubramos nuestras respuestas.</h1><p className="page-lede">Cuando las dos personas terminen y decidan compartir, este espacio reúne lo que vivieron.</p><div className="result-unlock-banner"><span>✧</span><div><b>¡Llegó el momento de descubrir qué pensaron!</b><small>Sin puntajes de compatibilidad. Solo historias que se encuentran.</small></div></div>
+  return <main className="content results-page"><button className="back-link" onClick={onBack}>← Volver a la aventura</button><div className="eyebrow">{solo ? 'TU HISTORIA, A TU RITMO' : 'DOS PERSPECTIVAS, UNA HISTORIA'}</div><h1>{solo ? 'Tus respuestas.' : 'Descubramos nuestras respuestas.'}</h1><p className="page-lede">{solo ? 'Tus respuestas se guardan aqui para que vuelvas a ellas.' : 'Cuando ambas personas terminen y decidan compartir, aqui se reunira lo que vivieron.'}</p><div className="result-unlock-banner"><span>✧</span><div><b>{solo ? 'Tus momentos, en un solo lugar.' : 'Llegó el momento de descubrir qué pensaron.'}</b><small>{solo ? 'Puedes invitar a un amigo a esta salida cuando quieras.' : 'Sin puntajes de compatibilidad. Solo historias que se encuentran.'}</small></div></div>
     <div className="results-list">{tiles.map((tile, index) => {
       const values = people.map((person) => state.memberData?.[person.id]?.[tile.field]);
       const summaries = values.map((value) => {
-        if (tile.field === 'moment') return value?.ready && value?.share ? value.favorite : '';
-        const entries = Object.values(value || {}).filter((answer) => answer?.share);
+        if (tile.field === 'moment') return solo ? (value?.ready ? value.favorite : '') : (value?.ready && value?.share ? value.favorite : '');
+        const entries = Object.values(value || {}).filter((answer) => solo || answer?.share);
         return entries.map((answer) => answer.value || answer.text || answer.response || '').filter(Boolean).slice(0, 2).join(' · ');
       });
-      const ready = summaries.every(Boolean);
-      return <section key={tile.id} className="result-tile"><div className={`result-number result-n-${index}`}>0{index + 1}</div><div className="result-main"><h2>{tile.title}</h2>{ready ? <div className="result-quotes">{people.map((person, personIndex) => <p key={person.id}><span><Avatar value={person.avatar} /> {person.name}</span><b>{summaries[personIndex]}</b></p>)}</div> : <p>Falta que ambas personas respondan y acepten compartir.</p>}</div><div className={`status-tag ${ready ? 'ready' : ''}`}>{ready ? 'Revelado' : 'Esperando'}</div><button className="activity-arrow" onClick={() => onOpen(tile.id)}>↗</button></section>;
+      const ready = summaries.length > 0 && summaries.every(Boolean);
+      return <section key={tile.id} className="result-tile"><div className={`result-number result-n-${index}`}>0{index + 1}</div><div className="result-main"><h2>{tile.title}</h2>{ready ? <div className="result-quotes">{people.map((person, personIndex) => <p key={person.id}><span><Avatar value={person.avatar} /> {person.name}</span><b>{summaries[personIndex]}</b></p>)}</div> : <p>{solo ? 'Completa esta actividad y elige que quieres guardar.' : 'Falta que ambas personas respondan y acepten compartir.'}</p>}</div><div className={`status-tag ${ready ? 'ready' : ''}`}>{ready ? 'Revelado' : 'Esperando'}</div><button className="activity-arrow" onClick={() => onOpen(tile.id)}>↗</button></section>;
     })}</div><button className="primary-button" onClick={() => onOpen('capsule')}>Guardar momentos en la cápsula →</button>
   </main>;
 }
 
-function ExperienceForm({ friend, onClose, onSubmit, busy }) {
-  const [form, setForm] = useState({ title: '', date: localDateValue(), place: destinations[0], description: '', emoji: CHISPOSITA_CIRCLE_ICON });
+function ExperienceForm({ friend, friends = [], onClose, onSubmit, busy }) {
+  const [form, setForm] = useState({ title: '', date: localDateValue(), place: destinations[0], description: '', emoji: CHISPOSITA_CIRCLE_ICON, friendId: friend?.id || '' });
+  const friendOptions = [...new Map([...(friends || []), ...(friend ? [friend] : [])].map((entry) => [entry.id, entry])).values()];
   useEffect(() => {
     const closeOnEscape = (event) => { if (event.key === 'Escape') onClose(); };
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, [onClose]);
   const submit = (event) => { event.preventDefault(); onSubmit(form); };
-  return <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="experience-heading"><button className="modal-close" onClick={onClose} aria-label="Cerrar">×</button><div className="eyebrow">UN NUEVO CAPÍTULO</div><h2 id="experience-heading">Una cita más para su colección.</h2><div className="meeting-with-friend"><Avatar value={friend.avatar} /><span>Un encuentro con <b>{friend.name}</b></span></div><form onSubmit={submit}><label>Nombre de la experiencia<input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Una tarde que se alargó" required /></label><div className="field-row"><label>Fecha<ExperienceDateField value={form.date} onChange={(date) => setForm({ ...form, date })} /></label><label>Emoji<ChispositaEmojiField /></label></div><label>Lugar<select value={form.place} onChange={(e) => setForm({ ...form, place: e.target.value })}>{destinations.map((place) => <option key={place}>{place}</option>)}</select></label><label>Descripción opcional<textarea rows="2" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label><button className="primary-button full-button" disabled={busy}>{busy ? 'Guardando…' : 'Crear pasaporte digital →'}</button></form></section></div>;
+  const invitedFriend = friendOptions.find((entry) => entry.id === form.friendId);
+  return <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section className="modal-card outing-form-card" role="dialog" aria-modal="true" aria-labelledby="experience-heading"><button className="modal-close" onClick={onClose} aria-label="Cerrar">×</button><div className="eyebrow">UN NUEVO PLAN</div><h2 id="experience-heading">Planea tu próxima salida.</h2>
+    <form onSubmit={submit}><label>Nombre de la salida<input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="Una tarde en el parque" required /></label><div className="field-row"><label>Fecha<ExperienceDateField value={form.date} onChange={(date) => setForm({ ...form, date })} /></label><label>Marca<ChispositaEmojiField /></label></div><label>Lugar<select value={form.place} onChange={(event) => setForm({ ...form, place: event.target.value })}>{destinations.map((place) => <option key={place}>{place}</option>)}</select></label><label>Descripción opcional<textarea rows="3" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="¿Qué te gustaría hacer?" /></label><label className="outing-companion-control">Invitar a un amigo <span>(opcional)</span><select value={form.friendId} onChange={(event) => setForm({ ...form, friendId: event.target.value })}><option value="">Crear salida solo para mí</option>{friendOptions.map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}</select></label>{invitedFriend && <div className="meeting-with-friend"><Avatar value={invitedFriend.avatar} /><span>Invitación para <b>{invitedFriend.name}</b></span></div>}<button className="primary-button full-button" disabled={busy}>{busy ? 'Guardando…' : 'Crear salida →'}</button></form>
+  </section></div>;
 }
 
 export { labelDate };

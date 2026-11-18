@@ -149,9 +149,8 @@ export function cloudSnapshotSignature(state, userId) {
   return JSON.stringify({ shared: stripPersonalState(state), ownData });
 }
 
-export async function createCloudExperience(userId, form, friendId) {
-  if (!friendId) throw new Error('Elige primero un amigo para crear el encuentro.');
-  const { data, error } = await supabase.rpc('create_friend_experience', { p_friend_id: friendId, p_title: form.title.trim(), p_date: form.date || localDateValue(), p_place: form.place, p_description: form.description || '', p_emoji: form.emoji || '\u2726' });
+export async function createCloudExperience(form, friendId) {
+  const { data, error } = await supabase.rpc('create_friend_experience', { p_friend_id: friendId || null, p_title: form.title.trim(), p_date: form.date || localDateValue(), p_place: form.place, p_description: form.description || '', p_emoji: form.emoji || '\u2726' });
   if (error) throw error;
   return { id: data };
 }
