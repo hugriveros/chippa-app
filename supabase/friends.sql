@@ -28,6 +28,12 @@ create table if not exists public.friend_requests (
   check (sender_id <> recipient_id)
 );
 do $$ begin
+  alter publication supabase_realtime add table public.friendships;
+exception when duplicate_object then null; end $$;
+do $$ begin
+  alter publication supabase_realtime add table public.friend_invitations;
+exception when duplicate_object then null; end $$;
+do $$ begin
   alter publication supabase_realtime add table public.friend_requests;
 exception when duplicate_object then null; end $$;
 create index if not exists friendships_peer_idx on public.friendships(user_b);

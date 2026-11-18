@@ -406,6 +406,9 @@ do $$ begin
   alter publication supabase_realtime add table public.participant_shared_state;
 exception when duplicate_object then null; end $$;
 do $$ begin
+  alter publication supabase_realtime add table public.participant_private_state;
+exception when duplicate_object then null; end $$;
+do $$ begin
   alter publication supabase_realtime add table public.experience_participants;
 exception when duplicate_object then null; end $$;
 
@@ -440,6 +443,12 @@ create table if not exists public.friend_requests (
   responded_at timestamptz,
   check (sender_id <> recipient_id)
 );
+do $$ begin
+  alter publication supabase_realtime add table public.friendships;
+exception when duplicate_object then null; end $$;
+do $$ begin
+  alter publication supabase_realtime add table public.friend_invitations;
+exception when duplicate_object then null; end $$;
 do $$ begin
   alter publication supabase_realtime add table public.friend_requests;
 exception when duplicate_object then null; end $$;

@@ -6,7 +6,7 @@ import { loadDemoState, resetDemoState, saveDemoState } from './lib/demoStore.js
 import { supabaseConfigured, supabase } from './lib/supabase.js';
 import {
   createCloudExperience, ensureProfile, joinCloudExperience, loadCloudState, makeCloudInvitation,
-  cloudSnapshotSignature, leaveCloudExperience, saveCloudState, signIn, signOut, signUp
+  leaveCloudExperience, signIn, signOut, signUp
 } from './lib/cloudStore.js';
 import ExperienceModule from './ExperienceModule.jsx';
 import { labelDate, localDateValue } from './lib/format.js';
@@ -15,6 +15,7 @@ import GamesHub, { ActivityCard } from './GamesHub.jsx';
 import Avatar from './Avatar.jsx';
 import FriendsPage, { Empty as EmptyFriends } from './FriendsPage.jsx';
 import { createEmptyState, emptyShared, loadFriends, receiveFriendInvitation } from './lib/friendsStore.js';
+import { useAppState } from './context/AppStateContext.jsx';
 import PremiumCheckout from './PremiumCheckout.jsx';
 import { activityStatus, completionRecord, loadSimulatedPremium, premiumKey } from './lib/activityStatus.js';
 
@@ -62,7 +63,7 @@ function App() {
   const localPreview = import.meta.env.DEV && !supabaseConfigured;
   const [page, setPage] = useState('welcome');
   const [moduleId, setModuleId] = useState('moment');
-  const [state, setState] = useState(null);
+  const { state, setState, update, updateMember, setCloudUser, hydrateCloudState, syncError, clearSyncError } = useAppState();
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(!supabaseConfigured);
   const [authMode, setAuthMode] = useState('signup');
@@ -80,9 +81,6 @@ function App() {
   const [friendsError, setFriendsError] = useState('');
   const [meetingFriend, setMeetingFriend] = useState(null);
   const [friendsVersion, setFriendsVersion] = useState(0);
-  const syncTimer = useRef(null);
-  const lastCloudSignature = useRef('');
-  const cloudSnapshotKey = useRef('');
   const inviteHandled = useRef(false);
   const friendInviteNotified = useRef('');
 
@@ -105,6 +103,14 @@ function App() {
     notify.timer = window.setTimeout(() => setToast(''), 2800);
   }, []);
 
+  useEffect(() => { setCloudUser(user); }, [user, setCloudUser]);
+
+  useEffect(() => {
+    if (!syncError) return;
+    notify(syncError);
+    clearSyncError();
+  }, [syncError, notify, clearSyncError]);
+
   useEffect(() => {
     if (!supabaseConfigured) return undefined;
     let alive = true;
@@ -115,7 +121,7 @@ function App() {
         try {
           const loaded = await loadCloudState(data.session.user);
           if (!alive) return;
-          if (loaded) { setState(loaded); setPage(hasPendingFriendInvite() || !loaded.experience?.id ? 'friends' : 'dashboard'); }
+          if (loaded) { hydrateCloudState(loaded, data.session.user); setPage(hasPendingFriendInvite() || !loaded.experience?.id ? 'friends' : 'dashboard'); }
           else setPage('friends');
         } catch (loadError) { notify(loadError.message || 'No pudimos cargar tus experiencias.'); setPage('welcome'); }
       }
@@ -123,85 +129,26 @@ function App() {
     }).catch(() => { if (alive) { setAuthReady(true); notify('No pudimos conectar tu cuenta. Puedes volver a iniciar sesión.'); } });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!alive) return;
-      if (!session?.user) { setUser(null); setState(null); setPage('welcome'); return; }
+      if (!session?.user) { setUser(null); setCloudUser(null); setState(null); setPage('welcome'); return; }
       setUser(session.user);
       window.setTimeout(async () => {
         try {
           await acceptPendingInvite(session.user);
           const loaded = await loadCloudState(session.user);
           if (!alive) return;
-          if (loaded) { setState(loaded); setPage(hasPendingFriendInvite() || !loaded.experience?.id ? 'friends' : 'dashboard'); }
+          if (loaded) { hydrateCloudState(loaded, session.user); setPage(hasPendingFriendInvite() || !loaded.experience?.id ? 'friends' : 'dashboard'); }
           else setPage('friends');
         } catch (error) { notify(error.message || 'No pudimos abrir esta invitación.'); setPage('friends'); }
       }, 0);
     });
     return () => { alive = false; listener.subscription.unsubscribe(); };
-  }, [notify, acceptPendingInvite]);
-
-  useEffect(() => {
-    if (!state || state.mode !== 'cloud' || !state.experience?.id || !supabase) return undefined;
-    const channel = supabase.channel(`chippa-${state.experience.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'experience_state', filter: `experience_id=eq.${state.experience.id}` }, async () => {
-        if (!user) return;
-        try { const fresh = await loadCloudState(user); if (fresh) setState(fresh); } catch { /* Se conserva la última versión local. */ }
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'participant_shared_state', filter: `experience_id=eq.${state.experience.id}` }, async () => {
-        if (!user) return;
-        try { const fresh = await loadCloudState(user); if (fresh) setState(fresh); } catch { /* Se conserva la última versión local. */ }
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'experience_participants', filter: `experience_id=eq.${state.experience.id}` }, async () => {
-        if (!user) return;
-        try { const fresh = await loadCloudState(user); if (fresh) setState(fresh); } catch { /* Se conserva la última versión local. */ }
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [state?.mode, state?.experience?.id, user?.id]);
-
-  useEffect(() => {
-    if (!state || state.mode !== 'cloud' || !user) return undefined;
-    const snapshotKey = `${user.id}:${state.experience?.id}`;
-    if (cloudSnapshotKey.current !== snapshotKey) {
-      cloudSnapshotKey.current = snapshotKey;
-      lastCloudSignature.current = '';
-    }
-    const signature = cloudSnapshotSignature(state, user.id);
-    if (signature === lastCloudSignature.current) return undefined;
-    const previousSignature = lastCloudSignature.current;
-    lastCloudSignature.current = signature;
-    window.clearTimeout(syncTimer.current);
-    syncTimer.current = window.setTimeout(() => {
-      saveCloudState(state, user.id).catch((error) => {
-        if (lastCloudSignature.current === signature) lastCloudSignature.current = previousSignature;
-        notify(error.message || 'No pudimos sincronizar este cambio.');
-      });
-    }, 650);
-    return () => window.clearTimeout(syncTimer.current);
-  }, [state, user, notify]);
+  }, [notify, acceptPendingInvite, hydrateCloudState, setCloudUser]);
 
   const currentUser = useMemo(() => state?.participants?.find((person) => person.id === state.activeUserId) || state?.participants?.[0], [state]);
   const partner = useMemo(() => state?.participants?.find((person) => person.id !== currentUser?.id), [state, currentUser]);
   const currentMember = state?.memberData?.[state?.activeUserId] || emptyMember();
   const socialContext = useRef({ currentUser, state });
   socialContext.current = { currentUser, state };
-
-  const update = useCallback((updater) => {
-    setState((previous) => {
-      if (!previous) return previous;
-      const next = typeof updater === 'function' ? updater(previous) : { ...previous, ...updater };
-      if (next.mode === 'demo') saveDemoState(next);
-      return next;
-    });
-  }, []);
-
-  const updateMember = useCallback((updater, memberId) => {
-    const id = memberId || state?.activeUserId;
-    if (!id) return;
-    update((previous) => {
-      const before = previous.memberData?.[id] || emptyMember();
-      const after = typeof updater === 'function' ? updater(before) : { ...before, ...updater };
-      return { ...previous, memberData: { ...previous.memberData, [id]: after } };
-    });
-  }, [state?.activeUserId, update]);
 
   const premiumIdentity = state?.mode === 'cloud' ? user?.id : currentUser?.id;
   useEffect(() => {
@@ -266,16 +213,21 @@ function App() {
   useEffect(() => {
     if (!currentUser || !state) return undefined;
     const refresh = () => { if (!document.hidden) refreshFriends().catch(() => {}); };
-    window.addEventListener('focus', refresh); window.addEventListener('storage', refresh);
+    window.addEventListener('focus', refresh); window.addEventListener('storage', refresh); window.addEventListener('online', refresh);
+    document.addEventListener('visibilitychange', refresh);
     const channel = state.mode === 'cloud' && supabase ? supabase.channel(`chippa-friend-requests-${currentUser.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'friend_requests', filter: `recipient_id=eq.${currentUser.id}` }, refresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'friend_requests', filter: `sender_id=eq.${currentUser.id}` }, refresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'friendships', filter: `user_a=eq.${currentUser.id}` }, refresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'friendships', filter: `user_b=eq.${currentUser.id}` }, refresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'friend_invitations', filter: `owner_id=eq.${currentUser.id}` }, refresh)
       .subscribe() : null;
-    return () => { window.removeEventListener('focus', refresh); window.removeEventListener('storage', refresh); if (channel) supabase.removeChannel(channel); };
+    return () => { window.removeEventListener('focus', refresh); window.removeEventListener('storage', refresh); window.removeEventListener('online', refresh); document.removeEventListener('visibilitychange', refresh); if (channel) supabase.removeChannel(channel); };
   }, [currentUser?.id, state?.mode, refreshFriends]);
   const newMeetingWith = (friend) => { setMeetingFriend(friend); setShowExperienceForm(true); };
 
   const startLocalPreview = () => {
+    setCloudUser(null);
     const demo = loadDemoState();
     if (demo.experience && !demo.experience.invitationCode) demo.experience.invitationCode = newInvitation();
     saveDemoState(demo);
@@ -288,7 +240,7 @@ function App() {
     if (!supabaseConfigured) {
       if (import.meta.env.PROD) { notify('El acceso a CHIPPA todavía se está preparando.'); return; }
       const next = authMode === 'login' ? loadDemoState() : createEmptyState({ id: `local-${crypto.randomUUID()}`, name: form.name.trim(), avatar: form.avatar || avatars[0] });
-      setState(next); saveDemoState(next); setPage('friends');
+      setCloudUser(null); setState(next); saveDemoState(next); setPage('friends');
       return;
     }
     setBusy(true);
@@ -301,7 +253,7 @@ function App() {
         setUser(authUser);
         await acceptPendingInvite(authUser);
         const loaded = await loadCloudState(authUser);
-        if (loaded) { setState(loaded); setPage(hasPendingFriendInvite() || !loaded.experience?.id ? 'friends' : 'dashboard'); } else setPage('friends');
+        if (loaded) { hydrateCloudState(loaded, authUser); setPage(hasPendingFriendInvite() || !loaded.experience?.id ? 'friends' : 'dashboard'); } else setPage('friends');
       }
     } catch (error) { notify(error.message || 'No pudimos continuar. Revisa tus datos.'); }
     finally { setBusy(false); }
@@ -314,7 +266,8 @@ function App() {
       try {
         const created = await createCloudExperience(user.id, form, meetingFriend.id);
         const loaded = await loadCloudState(user, created.id);
-        setState(loaded ? { ...loaded, experience: { ...loaded.experience, invitationCode: created.invitationCode } } : { ...state, experience: { ...created, status: 'active' }, mode: 'cloud' });
+        if (loaded) hydrateCloudState(loaded, user);
+        else setState({ ...state, experience: { ...created, status: 'active' }, mode: 'cloud' });
         setShowExperienceForm(false);
         setPage('dashboard');
         notify('Encuentro creado para los dos.');
@@ -346,7 +299,7 @@ function App() {
     if (state.experience?.id === experienceId) { setPage('dashboard'); return; }
     if (state.mode === 'cloud') {
       setBusy(true);
-      try { const selected = await loadCloudState(user, experienceId); if (selected) { setState(selected); setPage('dashboard'); } }
+      try { const selected = await loadCloudState(user, experienceId); if (selected) { hydrateCloudState(selected, user); setPage('dashboard'); } }
       catch (error) { notify(error.message || 'No pudimos abrir esa experiencia.'); }
       finally { setBusy(false); }
       return;
@@ -388,7 +341,7 @@ function App() {
 
   const logout = async () => {
     if (state?.mode === 'demo') {
-      setState(null); setPage('welcome');
+      setCloudUser(null); setState(null); setPage('welcome');
       return;
     }
     try { await signOut(); } catch (error) { notify(error.message || 'No se pudo cerrar sesión.'); }
@@ -410,7 +363,7 @@ function App() {
     try {
       await leaveCloudExperience(state.experience.id, user.id);
       const next = await loadCloudState(user);
-      if (next) { setState(next); setPage('dashboard'); }
+      if (next) { hydrateCloudState(next, user); setPage('dashboard'); }
       else { setState(null); setPage('friends'); }
       notify('Saliste de esta experiencia.');
     } catch (error) { notify(error.message || 'No pudimos salir de la experiencia.'); }
