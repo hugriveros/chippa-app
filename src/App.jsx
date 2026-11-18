@@ -14,13 +14,28 @@ import { LegalFooter, LegalPolicies } from './LegalPolicies.jsx';
 import GamesHub, { ActivityCard } from './GamesHub.jsx';
 import Avatar from './Avatar.jsx';
 import FriendsPage, { Empty as EmptyFriends } from './FriendsPage.jsx';
-import { createEmptyState, emptyShared, loadFriends } from './lib/friendsStore.js';
+import { createEmptyState, emptyShared, loadFriends, receiveFriendInvitation } from './lib/friendsStore.js';
 import PremiumCheckout from './PremiumCheckout.jsx';
 import { activityStatus, completionRecord, loadSimulatedPremium, premiumKey } from './lib/activityStatus.js';
 
 const groupOrder = ['Revive la cita', 'Juegos', 'Cartas', 'Aventuras', 'Conózcanse', 'Guarden recuerdos'];
 const emptyMember = () => ({ moment: {}, same: {}, stories: {}, trivia: {}, letters: [], questions: [], future: [], preferences: {}, votes: {} });
 const newInvitation = () => `CH-${Math.random().toString(36).slice(2, 6).toUpperCase()}-${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
+const hasPendingFriendInvite = () => {
+  if (new URLSearchParams(window.location.search).has('friend')) return true;
+  try { return Boolean(window.sessionStorage.getItem('chippa-friend-invite')); } catch { return false; }
+};
+const getPendingFriendInvite = () => {
+  const fromUrl = new URLSearchParams(window.location.search).get('friend');
+  if (fromUrl) return fromUrl;
+  try { return window.sessionStorage.getItem('chippa-friend-invite') || ''; } catch { return ''; }
+};
+const clearPendingFriendInvite = () => {
+  try { window.sessionStorage.removeItem('chippa-friend-invite'); } catch { /* El almacenamiento de sesión puede estar bloqueado. */ }
+  const url = new URL(window.location.href);
+  url.searchParams.delete('friend');
+  window.history.replaceState(null, '', url);
+};
 
 const CHISPOSITA_CIRCLE_ICON = '/assets/chippa/chisposita-circulo.png';
 
@@ -60,7 +75,7 @@ function App() {
   const [showExperienceForm, setShowExperienceForm] = useState(false);
   const [showExperienceMenu, setShowExperienceMenu] = useState(false);
   const [profileMenu, setProfileMenu] = useState(false);
-  const [social, setSocial] = useState({ connections: [], invitations: [], meetings: [] });
+  const [social, setSocial] = useState({ connections: [], invitations: [], requests: [], meetings: [] });
   const [friendsLoading, setFriendsLoading] = useState(false);
   const [friendsError, setFriendsError] = useState('');
   const [meetingFriend, setMeetingFriend] = useState(null);
@@ -69,6 +84,12 @@ function App() {
   const lastCloudSignature = useRef('');
   const cloudSnapshotKey = useRef('');
   const inviteHandled = useRef(false);
+  const friendInviteNotified = useRef('');
+
+  useEffect(() => {
+    const token = new URLSearchParams(window.location.search).get('friend');
+    if (token) { try { window.sessionStorage.setItem('chippa-friend-invite', token); } catch { /* El enlace sigue disponible en la URL actual. */ } }
+  }, []);
 
   const acceptPendingInvite = useCallback(async (authUser) => {
     const code = new URLSearchParams(window.location.search).get('invite');
@@ -94,7 +115,7 @@ function App() {
         try {
           const loaded = await loadCloudState(data.session.user);
           if (!alive) return;
-          if (loaded) { setState(loaded); setPage(new URLSearchParams(window.location.search).get('friend') || !loaded.experience?.id ? 'friends' : 'dashboard'); }
+          if (loaded) { setState(loaded); setPage(hasPendingFriendInvite() || !loaded.experience?.id ? 'friends' : 'dashboard'); }
           else setPage('friends');
         } catch (loadError) { notify(loadError.message || 'No pudimos cargar tus experiencias.'); setPage('welcome'); }
       }
@@ -109,7 +130,7 @@ function App() {
           await acceptPendingInvite(session.user);
           const loaded = await loadCloudState(session.user);
           if (!alive) return;
-          if (loaded) { setState(loaded); setPage(new URLSearchParams(window.location.search).get('friend') || !loaded.experience?.id ? 'friends' : 'dashboard'); }
+          if (loaded) { setState(loaded); setPage(hasPendingFriendInvite() || !loaded.experience?.id ? 'friends' : 'dashboard'); }
           else setPage('friends');
         } catch (error) { notify(error.message || 'No pudimos abrir esta invitación.'); setPage('friends'); }
       }, 0);
@@ -160,6 +181,8 @@ function App() {
   const currentUser = useMemo(() => state?.participants?.find((person) => person.id === state.activeUserId) || state?.participants?.[0], [state]);
   const partner = useMemo(() => state?.participants?.find((person) => person.id !== currentUser?.id), [state, currentUser]);
   const currentMember = state?.memberData?.[state?.activeUserId] || emptyMember();
+  const socialContext = useRef({ currentUser, state });
+  socialContext.current = { currentUser, state };
 
   const update = useCallback((updater) => {
     setState((previous) => {
@@ -208,20 +231,48 @@ function App() {
   };
 
   const refreshFriends = useCallback(async () => {
-    if (!currentUser || !state) return;
+    const { currentUser: activeUser, state: activeState } = socialContext.current;
+    if (!activeUser || !activeState) return;
     setFriendsLoading(true); setFriendsError('');
-    try { const result = await loadFriends(currentUser, state); setSocial({ ...result, ownerId: currentUser.id }); return result; }
+    try { const result = await loadFriends(activeUser, activeState); setSocial({ ...result, ownerId: activeUser.id }); return result; }
     catch (error) { setFriendsError('No pudimos cargar tus amigos. Intenta nuevamente.'); throw error; }
     finally { setFriendsLoading(false); }
-  }, [state, currentUser]);
-  useEffect(() => { if (page === 'friends') { let active = true; loadFriends(currentUser, state).then((result) => { if (active) { setSocial({ ...result, ownerId: currentUser.id }); setFriendsError(''); } }).catch(() => { if (active) setFriendsError('No pudimos cargar tus amigos. Intenta nuevamente.'); }).finally(() => { if (active) setFriendsLoading(false); }); setFriendsLoading(true); return () => { active = false; }; } }, [page, state, currentUser, friendsVersion]);
+  }, []);
   useEffect(() => {
-    if (page !== 'friends' || !currentUser) return undefined;
+    if (!currentUser || !state) { setSocial({ connections: [], invitations: [], requests: [], meetings: [] }); setFriendsLoading(false); return undefined; }
+    let active = true;
+    setFriendsLoading(true);
+    const loadSocial = async () => {
+      try {
+        let result = await loadFriends(currentUser, state);
+        const inviteToken = page === 'friends' ? getPendingFriendInvite() : '';
+        if (inviteToken) {
+          await receiveFriendInvitation(currentUser, state.mode, inviteToken);
+          clearPendingFriendInvite();
+          result = await loadFriends(currentUser, state);
+          if (friendInviteNotified.current !== inviteToken) {
+            friendInviteNotified.current = inviteToken;
+            notify('Tienes una nueva solicitud de amistad. Puedes aceptarla o rechazarla.');
+          }
+        }
+        if (active) { setSocial({ ...result, ownerId: currentUser.id }); setFriendsError(''); }
+      } catch (loadError) {
+        if (active) setFriendsError(loadError.message || 'No pudimos cargar tus amigos. Intenta nuevamente.');
+      } finally { if (active) setFriendsLoading(false); }
+    };
+    loadSocial();
+    return () => { active = false; };
+  }, [page, currentUser?.id, state?.mode, state?.experience?.id, friendsVersion]);
+  useEffect(() => {
+    if (!currentUser || !state) return undefined;
     const refresh = () => { if (!document.hidden) refreshFriends().catch(() => {}); };
     window.addEventListener('focus', refresh); window.addEventListener('storage', refresh);
-    const timer = state.mode === 'cloud' ? window.setInterval(refresh, 30000) : null;
-    return () => { window.removeEventListener('focus', refresh); window.removeEventListener('storage', refresh); if (timer) window.clearInterval(timer); };
-  }, [page, currentUser?.id, state?.mode, refreshFriends]);
+    const channel = state.mode === 'cloud' && supabase ? supabase.channel(`chippa-friend-requests-${currentUser.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'friend_requests', filter: `recipient_id=eq.${currentUser.id}` }, refresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'friend_requests', filter: `sender_id=eq.${currentUser.id}` }, refresh)
+      .subscribe() : null;
+    return () => { window.removeEventListener('focus', refresh); window.removeEventListener('storage', refresh); if (channel) supabase.removeChannel(channel); };
+  }, [currentUser?.id, state?.mode, refreshFriends]);
   const newMeetingWith = (friend) => { setMeetingFriend(friend); setShowExperienceForm(true); };
 
   const startLocalPreview = () => {
@@ -229,7 +280,7 @@ function App() {
     if (demo.experience && !demo.experience.invitationCode) demo.experience.invitationCode = newInvitation();
     saveDemoState(demo);
     setState(demo);
-    setPage(new URLSearchParams(window.location.search).get('friend') || !demo.experience?.id ? 'friends' : 'dashboard');
+    setPage(hasPendingFriendInvite() || !demo.experience?.id ? 'friends' : 'dashboard');
     notify('Tu espacio está listo en este dispositivo.');
   };
 
@@ -250,7 +301,7 @@ function App() {
         setUser(authUser);
         await acceptPendingInvite(authUser);
         const loaded = await loadCloudState(authUser);
-        if (loaded) { setState(loaded); setPage(new URLSearchParams(window.location.search).get('friend') || !loaded.experience?.id ? 'friends' : 'dashboard'); } else setPage('friends');
+        if (loaded) { setState(loaded); setPage(hasPendingFriendInvite() || !loaded.experience?.id ? 'friends' : 'dashboard'); } else setPage('friends');
       }
     } catch (error) { notify(error.message || 'No pudimos continuar. Revisa tus datos.'); }
     finally { setBusy(false); }
@@ -386,8 +437,10 @@ function App() {
   if (page === 'auth') return <><AuthPage mode={authMode} setMode={setAuthMode} onSubmit={handleAuth} onBack={() => setPage('welcome')} onLegal={setLegalDocument} busy={busy} cloud={supabaseConfigured} /><LegalPolicies document={legalDocument} onClose={() => setLegalDocument(null)} />{toast && <Toast message={toast} />}</>;
   if (!state || !currentUser) return <><Welcome onStart={() => setPage('auth')} onLocalPreview={localPreview ? startLocalPreview : undefined} onLogin={() => { setAuthMode('login'); setPage('auth'); }} onLegal={setLegalDocument} cloud={supabaseConfigured} /><LegalPolicies document={legalDocument} onClose={() => setLegalDocument(null)} /></>;
 
+  const pendingFriendRequests = social.ownerId === currentUser.id ? (social.requests || []).filter((request) => request.recipientId === currentUser.id && request.status === 'pending').length : 0;
+
   return <div className="app-shell">
-    <Sidebar premiumActive={premiumActive} page={page} setPage={changePage} openModule={openModule} state={state} />
+    <Sidebar premiumActive={premiumActive} page={page} setPage={changePage} openModule={openModule} state={state} friendRequestCount={pendingFriendRequests} />
     <div className="app-main">
       <header className="topbar">
         <button className="mobile-brand" onClick={() => setPage('dashboard')} aria-label="Ir al inicio de Chippa"><img src="/assets/chippa/brand.png" alt="CHIPPA" /></button>
@@ -406,7 +459,7 @@ function App() {
         </div>
       </header>
       {state.mode === 'demo' && import.meta.env.DEV && <div className="local-storage-notice"><span>ⓘ</span> Los cambios de esta vista se guardan en este dispositivo.</div>}
-      {page === 'friends' && <FriendsPage key={`${currentUser.id}:${friendsVersion}`} person={currentUser} state={state} social={social.ownerId === currentUser.id ? social : { connections: [], invitations: [], meetings: [] }} loading={friendsLoading} error={friendsError} onRefresh={() => refreshFriends().catch(() => {})} onNewMeeting={newMeetingWith} onOpenMeeting={selectExperience} onToast={notify} />}
+      {page === 'friends' && <FriendsPage key={`${currentUser.id}:${friendsVersion}`} person={currentUser} state={state} social={social.ownerId === currentUser.id ? social : { connections: [], invitations: [], requests: [], meetings: [] }} loading={friendsLoading} error={friendsError} onRefresh={() => refreshFriends().catch(() => {})} onNewMeeting={newMeetingWith} onOpenMeeting={selectExperience} onToast={notify} />}
       {page === 'dashboard' && !state.experience?.id && <main className="content"><EmptyFriends title="Tu historia empieza con tus amigos." text="Invita a alguien, conecten y creen juntos su primer encuentro." action="Ver mis amigos" onClick={() => setPage('friends')} /></main>}
       {page === 'dashboard' && state.experience?.id && <Dashboard premiumActive={premiumActive} state={state} currentUser={currentUser} partner={partner} onOpen={openModule} onPage={changePage} onPremium={showPremiumNotice} onCreate={() => setPage('friends')} onInvite={invitePartner} onAcceptInvite={acceptDemoInvite} localPreview={localPreview} />}
       {page === 'games' && <GamesHub premiumActive={premiumActive} key={gamesFilter} initialFilter={gamesFilter} state={state} onOpen={openModule} onBack={() => setPage('dashboard')} />}
@@ -418,7 +471,7 @@ function App() {
       {page === 'capsule' && <ExperienceModule moduleId="capsule" state={state} update={update} updateMember={updateMember} currentUser={currentUser} partner={partner} currentMember={currentMember} onBack={() => setPage('dashboard')} onToast={notify} />}
       {page === 'passport' && <ExperienceModule moduleId="passport" state={state} update={update} updateMember={updateMember} currentUser={currentUser} partner={partner} currentMember={currentMember} onBack={() => setPage('dashboard')} onToast={notify} />}
       {showExperienceForm && meetingFriend && <ExperienceForm friend={meetingFriend} onClose={() => setShowExperienceForm(false)} onSubmit={createExperience} busy={busy} />}
-      <MobileNav premiumActive={premiumActive} page={page} setPage={changePage} openGames={() => changePage('games')} />
+      <MobileNav premiumActive={premiumActive} page={page} setPage={changePage} openGames={() => changePage('games')} friendRequestCount={pendingFriendRequests} />
       <LegalFooter className="app-legal-footer" onOpen={setLegalDocument} />
     </div>
     {toast && <div className="toast" role="status">{toast}</div>}
@@ -499,11 +552,11 @@ function AuthPage({ mode, setMode, onSubmit, onBack, onLegal, busy, cloud }) {
   </section><LegalFooter className="auth-legal-footer" onOpen={onLegal} /></main>;
 }
 
-function Sidebar({ premiumActive, page, setPage, openModule, state }) {
+function Sidebar({ premiumActive, page, setPage, openModule, state, friendRequestCount = 0 }) {
   const quick = [ ['moment', 'Nuestra cita', '📓'], ['same', 'Juegos', '🎮'], ['letters', 'Cartas', '💌'], ['next', 'Aventuras', '🗺️'] ];
   return <aside className="sidebar"><button className="sidebar-brand" onClick={() => setPage('dashboard')} aria-label="Ir al inicio de Chippa"><Brand /></button><div className="experience-chip"><span><ExperienceMark value={state.experience?.emoji} /></span><div><b>{state.experience?.title || 'Tu espacio en CHIPPA'}</b><small>{state.experience?.place || 'Conecta con tus amigos'}</small></div><span className="chip-dots">···</span></div>
     <div className="side-label">LA HISTORIA</div><button className={`side-link ${page === 'dashboard' ? 'active' : ''}`} onClick={() => setPage('dashboard')}><span>▧</span> Inicio</button>
-    <button className={`side-link ${page === 'friends' ? 'active' : ''}`} onClick={() => setPage('friends')}><span>♡</span> Amigos</button>
+    <button className={`side-link ${page === 'friends' ? 'active' : ''}`} onClick={() => setPage('friends')}><span>♡</span> Amigos{friendRequestCount > 0 && <i className="friend-nav-badge" aria-label={`${friendRequestCount} solicitudes pendientes`}>{friendRequestCount}</i>}</button>
     <div className="side-label spaced">EXPLORAR</div>{quick.map(([id, title, emoji]) => {
       const premium = !premiumActive && id !== 'same' && modules.some((item) => item.id === id && item.premium);
       return <button className={`side-link ${title === 'Juegos' && (page === 'games' || page === 'module' && ['same','story','memory','missions','trivia'].includes(id)) ? 'active' : ''} ${premium ? 'premium-menu-link' : ''}`} key={id} onClick={() => id === 'same' ? setPage('games') : openModule(id)} title={premium ? 'Contenido Premium bloqueado' : undefined}><span>{emoji}</span>{title}{premium ? <span className="side-premium-lock" role="img" aria-label="Premium bloqueado"><PremiumLockIcon /></span> : <i>→</i>}</button>;
@@ -513,13 +566,13 @@ function Sidebar({ premiumActive, page, setPage, openModule, state }) {
   </aside>;
 }
 
-function MobileNav({ premiumActive, page, setPage, openGames }) {
+function MobileNav({ premiumActive, page, setPage, openGames, friendRequestCount = 0 }) {
   const items = [
     ['dashboard', '⌂', 'Inicio', null], ['games', '🎮', 'Juegos', null], ['friends', '♡', 'Amigos', null], ['capsule', '📸', 'Cápsula', 'capsule'], ['passport', '🛂', 'Pasaporte', null]
   ];
   return <nav className="mobile-nav" aria-label="Navegación principal">{items.map(([target, icon, label, premiumId]) => {
     const premium = !premiumActive && Boolean(premiumId && modules.some((item) => item.id === premiumId && item.premium));
-    return <button key={target} className={`${page === target ? 'active' : ''} ${premium ? 'premium-nav-link' : ''}`} onClick={() => target === 'games' ? openGames() : setPage(target)} aria-disabled={premium || undefined} title={premium ? 'Contenido Premium bloqueado' : undefined}><span>{icon}</span>{label}{premium && <i className="mobile-premium-lock"><PremiumLockIcon /></i>}</button>;
+    return <button key={target} className={`${page === target ? 'active' : ''} ${premium ? 'premium-nav-link' : ''}`} onClick={() => target === 'games' ? openGames() : setPage(target)} aria-disabled={premium || undefined} title={premium ? 'Contenido Premium bloqueado' : undefined}><span>{icon}</span>{label}{target === 'friends' && friendRequestCount > 0 && <i className="friend-nav-badge" aria-label={`${friendRequestCount} solicitudes pendientes`}>{friendRequestCount}</i>}{premium && <i className="mobile-premium-lock"><PremiumLockIcon /></i>}</button>;
   })}</nav>;
 }
 

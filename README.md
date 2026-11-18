@@ -22,7 +22,7 @@ Consulta [`DEPLOY.md`](./DEPLOY.md) para configurar el proyecto, sus variables, 
 
 ## Funciones
 
-- Amigos, invitaciones de un solo uso y creación de encuentros entre cuentas conectadas.
+- Amigos con enlaces o códigos de invitación, solicitudes que cada perfil acepta o rechaza y creación de encuentros entre cuentas conectadas.
 - Historial de citas e interacciones compartidas por amigo, sin revelar borradores privados.
 - Juegos, cartas, aventuras, cápsula, pasaporte, playlist y generador de planes.
 - Timbre de CHIPPA por actividad completada y desbloqueo Premium con pago simulado de $0.

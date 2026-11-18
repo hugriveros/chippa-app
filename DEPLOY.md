@@ -5,7 +5,7 @@ CHIPPA se publica como aplicación estática de Vite en Vercel. El inicio de ses
 ## Supabase
 
 1. Crea un proyecto, habilita Email en Authentication → Sign In / Providers y desactiva **Confirm email** en los ajustes del proveedor Email. Así, Supabase crea la sesión al registrarse sin exigir validación del correo.
-2. En un proyecto nuevo, ejecuta [`supabase/schema.sql`](./supabase/schema.sql) en el SQL Editor. Si CHIPPA ya tenía el esquema base instalado, ejecuta [`supabase/friends.sql`](./supabase/friends.sql) para agregar amigos, invitaciones y encuentros.
+2. En un proyecto nuevo, ejecuta [`supabase/schema.sql`](./supabase/schema.sql) en el SQL Editor. Si CHIPPA ya tenía el esquema base instalado, ejecuta [`supabase/friends.sql`](./supabase/friends.sql) para agregar amigos, enlaces de invitación, solicitudes de amistad y encuentros. Si ya ejecutaste ese archivo antes, aplica [`20261118_friend_requests.sql`](./supabase/migrations/20261118_friend_requests.sql) para habilitar las solicitudes y notificaciones.
 3. En Authentication → URL Configuration configura:
    - **Site URL:** URL definitiva de CHIPPA.
    - **Redirect URLs:** URL exacta de producción, `https://*-<team-o-cuenta>.vercel.app/**` para previsualizaciones de Vercel y `http://localhost:5173/**` para desarrollo.

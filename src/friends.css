@@ -9,5 +9,43 @@
 .friend-detail-hero { display: flex; align-items: center; gap: 25px; flex-wrap: wrap; padding: 30px; border: 1px solid #e7d6ee; border-radius: 25px; background: linear-gradient(110deg,#fff2f7,#f1e9ff); }.friend-detail-hero > .avatar-image { width: 86px; height: 100px; }.friend-detail-hero .primary-button { margin-left: auto; }.friend-detail-hero p { color: #a089ac; font-size: 11px; }.friend-summary { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin: 20px 0 25px; }.friend-summary article { display: grid; justify-items: center; gap: 6px; border: 1px solid #ecdfed; border-radius: 17px; padding: 19px 10px; background: #fffcfe; text-align: center; }.friend-summary b { color: #ad6b9d; font: 500 30px 'Fredoka',sans-serif; }.friend-summary span { color: #ad92b0; font-size: 10px; }
 .friend-meetings { display: grid; gap: 14px; margin: 23px 0; }.friend-meeting { display: flex; align-items: center; gap: 20px; border: 1px solid #eaddeb; border-radius: 20px; padding: 21px; background: #fffafc; text-align: left; }.friend-meeting-icon { display: grid; place-items: center; width: 56px; height: 60px; flex: 0 0 auto; background: #fbe6f1; border-radius: 14px; }.friend-meeting-icon img { width: 36px; height: 40px; object-fit: contain; }.friend-meeting > span:nth-child(2) { display: grid; gap: 7px; }.friend-meeting small { color: #b090b2; font-size: 10px; }.friend-meeting b { color: #795a83; font: 500 22px 'Fredoka',sans-serif; }.friend-meeting span > span { color: #a58baa; font-size: 11px; }.friend-meeting i { margin-left: auto; color: #b05c95; font-size: 10px; font-style: normal; font-weight: 700; white-space: nowrap; }.friend-timeline > article { display: flex; gap: 16px; margin: 0 0 15px; padding: 20px; border: 1px solid #ecdceb; border-radius: 18px; background: #fffbfd; }.timeline-dot { width: 30px; height: 30px; display: grid; place-items: center; background: #f9dfed; color: #ca6ba2; border-radius: 50%; flex: 0 0 auto; }.friend-timeline article small { color: #b18cae; font-size: 10px; }.friend-timeline article p { color: #896a91; font: 500 21px/1.5 'Caveat',cursive; white-space: pre-line; overflow-wrap: anywhere; margin: 9px 0; }.friend-timeline article .text-button { padding: 0; font-size: 9px; }
 .meeting-with-friend { display: flex; align-items: center; gap: 13px; margin: 17px 0 23px; padding: 11px 14px; border: 1px solid #edddec; border-radius: 13px; background: #fff5fb; color: #9f7fa5; font-size: 11px; }.meeting-with-friend .avatar-image { width: 30px; height: 34px; }
+.friend-requests-page { display: grid; gap: 18px; }
+.friend-invite > p { max-width: 640px; color: #9f879f; font-size: 11px; line-height: 1.8; }
+.friend-invite form { margin-bottom: 0; }
+.friend-created-link { max-width: 760px; }
+.friend-created-link label { min-width: 0; }
+.invite-copy-actions { display: grid; grid-template-columns: auto minmax(180px, 1fr) auto; align-items: end; gap: 12px; }
+.invite-copy-actions .secondary-button { min-height: 39px; }
+.friend-accept-highlight { border-color: #dbaacb; box-shadow: 0 0 0 3px #f8e3f0; }
+.request-count { display: inline-grid; place-items: center; min-width: 20px; height: 20px; border-radius: 99px; padding: 0 6px; margin-left: 7px !important; background: #c53f83; color: white !important; font-size: 9px; font-weight: 800; }
+.request-count-large { min-width: auto; height: auto; padding: 7px 11px; }
+.friend-request-list { display: grid; gap: 12px; }
+.friend-list-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 8px 0 2px; }
+.friend-list-heading h2 { margin: 6px 0; color: #795b83; font: 500 25px 'Fredoka', sans-serif; }
+.friend-request-card, .outgoing-requests article { display: flex; align-items: center; gap: 16px; padding: 17px 19px; border: 1px solid #eaddeb; border-radius: 18px; background: linear-gradient(110deg,#fffafd,#f8f3ff); }
+.friend-request-card > .avatar-image, .outgoing-requests article > .avatar-image { width: 48px; height: 54px; flex: 0 0 auto; }
+.friend-request-copy { display: grid; gap: 5px; min-width: 0; color: #8e7495; font-size: 11px; }
+.friend-request-copy b { color: #674c70; font: 500 20px 'Fredoka', sans-serif; }
+.friend-request-copy small, .friend-request-card > small, .outgoing-requests article > small { color: #ae97b1; font-size: 9px; }
+.friend-request-actions { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+.friend-request-actions .primary-button { min-height: 36px; padding: 0 17px; font-size: 10px; }
+.friend-request-actions .text-button { color: #ac739a; font-size: 10px; }
+.friend-request-empty { padding: 20px; border: 1px dashed #e8cee2; border-radius: 16px; background: #fff9fc; color: #aa91ab; font-size: 11px; text-align: center; }
+.outgoing-requests article > .friend-request-copy { flex: 1; }
+.shared-invitations { padding-top: 8px; color: #906f92; font-size: 11px; }
+.shared-invitations summary { cursor: pointer; font-weight: 700; }
+.shared-invitations .invitation-list { margin-top: 10px; }
+.friends-tabs .request-count { margin-left: 5px !important; }
+.mobile-nav .friend-nav-badge { position: absolute; top: 3px; right: calc(50% - 23px); min-width: 15px; height: 15px; font-size: 8px; }
+@media(max-width:600px) {
+  .invite-copy-actions { grid-template-columns: 1fr; align-items: stretch; }
+  .invite-copy-actions label { order: 1; }
+  .invite-copy-actions .secondary-button { justify-self: start; }
+  .friend-request-card, .outgoing-requests article { align-items: flex-start; flex-wrap: wrap; padding: 15px; }
+  .friend-request-copy { flex: 1; }
+  .friend-request-actions { width: 100%; margin-left: 63px; }
+  .friend-request-actions .primary-button { min-width: 95px; }
+  .friend-list-heading h2 { font-size: 22px; }
+}
 @media(max-width:900px) { .friends-grid { grid-template-columns: 1fr; }.friend-detail-hero .primary-button { margin-left: 0; } }
 @media(max-width:600px) { .friends-hero { padding: 25px 21px; gap: 12px; }.friends-hero h1 { font-size: 37px; }.friends-hero > img { width: 60px; height: 85px; margin: 0; }.friends-hero p { font-size: 11px; }.friends-toolbar { margin: 23px 0 17px; }.friends-toolbar input { max-width: 100%; }.friends-tabs button { padding: 0 13px; font-size: 10px; }.friend-card { padding: 19px 18px 45px; gap: 16px; }.friend-card > .avatar-image { width: 52px; height: 60px; }.friend-accept { flex-direction: column; padding: 21px; gap: 12px; }.friend-accept form { width: 100%; max-width: none; min-width: 0; }.friend-invite { padding: 23px 20px; }.friend-invite h2, .friends-empty h2 { font-size: 24px; }.friends-empty { padding: 30px 20px; }.friend-detail-hero { padding: 23px 19px; gap: 18px; }.friend-detail-hero > .avatar-image { width: 66px; height: 78px; }.friend-detail-hero h1 { font-size: 34px; }.friend-detail-hero .primary-button { width: 100%; }.friend-summary { gap: 8px; }.friend-summary article { padding: 14px 6px; }.friend-summary b { font-size: 25px; }.friend-summary span { font-size: 8px; }.friend-meeting { padding: 17px; gap: 13px; flex-wrap: wrap; }.friend-meeting b { font-size: 20px; }.friend-meeting i { padding-left: 70px; width: 100%; }.invitation-list article > div:last-child { flex-wrap: wrap; } }

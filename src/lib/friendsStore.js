@@ -3,7 +3,7 @@ import { avatars, sameQuestions, triviaQuestions, storyPrompts } from '../data.j
 
 const localKey = 'chippa-friends-v1';
 const uuid = () => crypto.randomUUID();
-const read = () => { try { return JSON.parse(localStorage.getItem(localKey)) || { connections: [], invitations: [] }; } catch { return { connections: [], invitations: [] }; } };
+const read = () => { try { const data = JSON.parse(localStorage.getItem(localKey)) || {}; return { connections: data.connections || [], invitations: data.invitations || [], requests: data.requests || [] }; } catch { return { connections: [], invitations: [], requests: [] }; } };
 const write = (value) => localStorage.setItem(localKey, JSON.stringify(value));
 export const emptyShared = () => ({ memories: [], songs: [], plans: [], missions: [], stamps: [], letterHistory: [], favorites: [], game: { sameIndex: 0, storyIndex: 0, triviaIndex: 0 } });
 export const emptyMemberData = () => ({ moment: {}, same: {}, stories: {}, trivia: {}, letters: [], questions: [], future: [], preferences: {}, votes: {} });
@@ -25,17 +25,22 @@ export async function loadFriends(person, state) {
       }
     }
     write(data);
-    return { connections: data.connections.filter((entry) => entry.people.some((p) => p.id === person.id)).map((entry) => ({ ...entry.people.find((p) => p.id !== person.id), connectedAt: entry.createdAt })), invitations: data.invitations.filter((entry) => entry.owner.id === person.id), meetings };
+    const requests = data.requests.filter((entry) => entry.senderId === person.id || entry.recipientId === person.id).map((entry) => ({ ...entry, sender: entry.senderId === person.id ? person : entry.sender, recipient: entry.recipientId === person.id ? person : entry.recipient }));
+    return { connections: data.connections.filter((entry) => entry.people.some((p) => p.id === person.id)).map((entry) => ({ ...entry.people.find((p) => p.id !== person.id), connectedAt: entry.createdAt })), invitations: data.invitations.filter((entry) => entry.owner.id === person.id), requests, meetings };
   }
-  const [{ data: links, error }, { data: invites, error: inviteError }, { data: memberships, error: membershipError }] = await Promise.all([
+  const [{ data: links, error }, { data: invites, error: inviteError }, { data: rows, error: requestError }, { data: memberships, error: membershipError }] = await Promise.all([
     supabase.from('friendships').select('*'),
-    supabase.from('friend_invitations').select('id, recipient_label, created_at, expires_at, accepted_at, revoked_at').eq('owner_id', person.id).order('created_at', { ascending: false }),
+    supabase.from('friend_invitations').select('id, recipient_label, created_at, expires_at, accepted_at, accepted_by, revoked_at').eq('owner_id', person.id).order('created_at', { ascending: false }),
+    supabase.from('friend_requests').select('id, sender_id, recipient_id, invitation_id, status, created_at, responded_at').or(`sender_id.eq.${person.id},recipient_id.eq.${person.id}`).order('created_at', { ascending: false }),
     supabase.from('experience_participants').select('experience_id').eq('user_id', person.id)
   ]);
-  if (error || inviteError || membershipError) throw error || inviteError || membershipError;
-  const peerIds = (links || []).map((entry) => entry.user_a === person.id ? entry.user_b : entry.user_a);
+  if (error || inviteError || requestError || membershipError) throw error || inviteError || requestError || membershipError;
+  const friendIds = (links || []).map((entry) => entry.user_a === person.id ? entry.user_b : entry.user_a);
+  const peerIds = [...new Set([...friendIds, ...(rows || []).flatMap((entry) => [entry.sender_id, entry.recipient_id].filter((id) => id !== person.id)), ...(invites || []).map((entry) => entry.accepted_by).filter(Boolean)])];
   const { data: profiles, error: profileError } = peerIds.length ? await supabase.from('profiles').select('id,name,avatar').in('id', peerIds) : { data: [] };
   if (profileError) throw profileError;
+  const profileById = new Map([[person.id, person], ...(profiles || []).map((profile) => [profile.id, profile])]);
+  const requests = (rows || []).map((entry) => ({ id: entry.id, senderId: entry.sender_id, recipientId: entry.recipient_id, invitationId: entry.invitation_id, status: entry.status, createdAt: entry.created_at, respondedAt: entry.responded_at, sender: profileById.get(entry.sender_id) || { id: entry.sender_id, name: 'Perfil CHIPPA' }, recipient: profileById.get(entry.recipient_id) || { id: entry.recipient_id, name: 'Perfil CHIPPA' } }));
   const ids = (memberships || []).map((entry) => entry.experience_id);
   let meetings = [];
   if (ids.length) {
@@ -47,37 +52,68 @@ export async function loadFriends(person, state) {
     ]);
     for (const result of results) if (result.error) throw result.error;
     const [experiences, participants, common, shared] = results.map((result) => result.data || []);
-    meetings = experiences.map((experience) => ({ experience, participants: participants.filter((entry) => entry.experience_id === experience.id).map((entry) => [person, ...(profiles || [])].find((p) => p.id === entry.user_id) || { id: entry.user_id, name: 'Acompañante' }), shared: common.find((entry) => entry.experience_id === experience.id)?.shared_data?.shared || emptyShared(), memberData: Object.fromEntries(shared.filter((entry) => entry.experience_id === experience.id && entry.share_opt_in).map((entry) => [entry.user_id, entry.public_data])) }));
+    meetings = experiences.map((experience) => ({ experience, participants: participants.filter((entry) => entry.experience_id === experience.id).map((entry) => profileById.get(entry.user_id) || { id: entry.user_id, name: 'Acompañante' }), shared: common.find((entry) => entry.experience_id === experience.id)?.shared_data?.shared || emptyShared(), memberData: Object.fromEntries(shared.filter((entry) => entry.experience_id === experience.id && entry.share_opt_in).map((entry) => [entry.user_id, entry.public_data])) }));
   }
-  return { connections: profiles || [], invitations: (invites || []).map((entry) => ({ id: entry.id, label: entry.recipient_label, createdAt: entry.created_at, expiresAt: entry.expires_at, acceptedAt: entry.accepted_at, revokedAt: entry.revoked_at })), meetings };
+  return { connections: friendIds.map((id) => profileById.get(id)).filter(Boolean), invitations: (invites || []).map((entry) => ({ id: entry.id, label: entry.recipient_label, createdAt: entry.created_at, expiresAt: entry.expires_at, acceptedAt: entry.accepted_at, acceptedBy: entry.accepted_by, revokedAt: entry.revoked_at, requestStatus: requests.find((request) => request.invitationId === entry.id)?.status || null })), requests, meetings };
 }
 export async function inviteFriend(person, mode, label) {
   if (mode === 'cloud') {
-    const { data, error } = await supabase.rpc('create_friend_invitation', { p_label: label.trim() });
+    const { data, error } = await supabase.rpc('create_friend_invitation', { p_label: String(label || '').trim() });
     if (error) throw error;
     return data;
   }
   const data = read();
   const token = uuid();
-  data.invitations.unshift({ id: uuid(), token, owner: person, label: label.trim(), createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(), acceptedAt: null });
+  data.invitations.unshift({ id: uuid(), token, owner: person, label: String(label || '').trim(), createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(), acceptedAt: null, acceptedBy: null });
   write(data); return token;
 }
-export async function acceptFriend(person, mode, input, simulate = false) {
+export async function receiveFriendInvitation(person, mode, input) {
   let token = input.trim();
   try { const link = new URL(token); token = link.searchParams.get('friend') || token; } catch { /* A code can be pasted directly. */ }
   if (mode === 'cloud') {
-    const { data, error } = await supabase.rpc('accept_friend_invitation', { p_token: token });
+    const { data, error } = await supabase.rpc('receive_friend_invitation', { p_token: token });
     if (error) throw error;
     return data;
   }
   const data = read();
   const invite = data.invitations.find((entry) => entry.token === token || entry.id === token);
-  if (!invite || invite.acceptedAt || invite.revokedAt || new Date(invite.expiresAt) <= new Date()) throw new Error('La invitación no está disponible o ya venció.');
-  if (invite.owner.id === person.id && !simulate) throw new Error('Este enlace es tuyo. Compártelo con tu amigo para conectar.');
-  const peer = simulate ? { id: `local-friend-${uuid()}`, name: invite.label || 'Mi amigo', avatar: avatars[1] } : person;
-  if (!data.connections.some((entry) => entry.people.some((p) => p.id === invite.owner.id) && entry.people.some((p) => p.id === peer.id))) data.connections.push({ id: uuid(), people: [invite.owner, peer], createdAt: new Date().toISOString() });
-  invite.acceptedAt = new Date().toISOString(); write(data);
-  return peer.id;
+  if (!invite) throw new Error('No encontramos ese enlace o código de invitación.');
+  if (invite.owner.id === person.id) throw new Error('Este enlace es tuyo. Compártelo con la persona que quieres agregar.');
+  const existing = data.requests.find((entry) => entry.invitationId === invite.id);
+  if (existing) {
+    if (existing.recipientId === person.id && existing.status === 'pending') return existing.id;
+    if (existing.recipientId === person.id && existing.status === 'accepted') throw new Error('Ya están conectados como amigos.');
+    if (existing.recipientId === person.id) throw new Error('Esta solicitud ya fue rechazada.');
+    throw new Error('Este enlace ya fue utilizado. Pídele a tu amigo que cree uno nuevo.');
+  }
+  if (invite.acceptedAt || invite.revokedAt || new Date(invite.expiresAt) <= new Date()) throw new Error('La invitación no está disponible o ya venció.');
+  if (data.connections.some((entry) => entry.people.some((peer) => peer.id === invite.owner.id) && entry.people.some((peer) => peer.id === person.id))) throw new Error('Ya están conectados como amigos.');
+  const now = new Date().toISOString();
+  let request = data.requests.find((entry) => entry.senderId === invite.owner.id && entry.recipientId === person.id && entry.status === 'pending');
+  if (!request) {
+    request = { id: uuid(), senderId: invite.owner.id, recipientId: person.id, invitationId: invite.id, status: 'pending', createdAt: now, respondedAt: null, sender: invite.owner, recipient: person };
+    data.requests.unshift(request);
+  }
+  invite.acceptedAt = now;
+  invite.acceptedBy = person.id;
+  write(data);
+  return request.id;
+}
+export async function respondFriendRequest(person, mode, id, accept) {
+  if (mode === 'cloud') {
+    const { error } = await supabase.rpc('respond_friend_request', { p_request_id: id, p_accept: accept });
+    if (error) throw error;
+    return;
+  }
+  const data = read();
+  const request = data.requests.find((entry) => entry.id === id && entry.recipientId === person.id && entry.status === 'pending');
+  if (!request) throw new Error('Esta solicitud ya fue respondida o no está disponible.');
+  request.status = accept ? 'accepted' : 'declined';
+  request.respondedAt = new Date().toISOString();
+  if (accept && !data.connections.some((entry) => entry.people.some((peer) => peer.id === request.senderId) && entry.people.some((peer) => peer.id === person.id))) {
+    data.connections.push({ id: uuid(), people: [request.sender, person], createdAt: request.respondedAt });
+  }
+  write(data);
 }
 export async function revokeFriendInvitation(person, mode, id) {
   if (mode === 'cloud') { const { error } = await supabase.rpc('revoke_friend_invitation', { p_id: id }); if (error) throw error; return; }

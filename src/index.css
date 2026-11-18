@@ -170,6 +170,8 @@ textarea { resize: vertical; line-height: 1.7; }
 .side-link > span:first-child { width: 18px; flex: 0 0 18px; text-align: center; font-size: 15px; }
 .side-link i { margin-left: auto; opacity: 0; color: var(--berry); font-style: normal; }
 .side-link:hover, .side-link.active { color: #b92574; background: #fff0f7; }
+.friend-nav-badge { display: inline-grid; place-items: center; min-width: 17px; height: 17px; border-radius: 99px; padding: 0 5px; background: #c53f83; color: #fff; font-size: 9px; font-style: normal; font-weight: 800; line-height: 1; }
+.side-link .friend-nav-badge { margin-left: auto; opacity: 1; color: #fff; }
 .side-link:hover i { opacity: 1; }
 .side-link.premium-menu-link { cursor: pointer; }
 .side-link .side-premium-lock { display: inline-grid; place-items: center; width: 18px; height: 18px; flex: 0 0 18px; margin-left: auto; color: #a58968; }
