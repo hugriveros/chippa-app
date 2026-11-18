@@ -14,7 +14,7 @@ import { LegalFooter, LegalPolicies } from './LegalPolicies.jsx';
 import GamesHub, { ActivityCard } from './GamesHub.jsx';
 import Avatar from './Avatar.jsx';
 import FriendsPage, { Empty as EmptyFriends } from './FriendsPage.jsx';
-import { createEmptyState, emptyShared, loadFriends, receiveFriendInvitation } from './lib/friendsStore.js';
+import { createEmptyState, emptyShared, loadFriends } from './lib/friendsStore.js';
 import { useAppState } from './context/AppStateContext.jsx';
 import PremiumCheckout from './PremiumCheckout.jsx';
 import { activityStatus, completionRecord, loadSimulatedPremium, premiumKey } from './lib/activityStatus.js';
@@ -22,22 +22,6 @@ import { activityStatus, completionRecord, loadSimulatedPremium, premiumKey } fr
 const groupOrder = ['Revive la cita', 'Juegos', 'Cartas', 'Aventuras', 'Conózcanse', 'Guarden recuerdos'];
 const emptyMember = () => ({ moment: {}, same: {}, stories: {}, trivia: {}, letters: [], questions: [], future: [], preferences: {}, votes: {} });
 const newInvitation = () => `CH-${Math.random().toString(36).slice(2, 6).toUpperCase()}-${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
-const hasPendingFriendInvite = () => {
-  if (new URLSearchParams(window.location.search).has('friend')) return true;
-  try { return Boolean(window.sessionStorage.getItem('chippa-friend-invite')); } catch { return false; }
-};
-const getPendingFriendInvite = () => {
-  const fromUrl = new URLSearchParams(window.location.search).get('friend');
-  if (fromUrl) return fromUrl;
-  try { return window.sessionStorage.getItem('chippa-friend-invite') || ''; } catch { return ''; }
-};
-const clearPendingFriendInvite = () => {
-  try { window.sessionStorage.removeItem('chippa-friend-invite'); } catch { /* El almacenamiento de sesión puede estar bloqueado. */ }
-  const url = new URL(window.location.href);
-  url.searchParams.delete('friend');
-  window.history.replaceState(null, '', url);
-};
-
 const CHISPOSITA_CIRCLE_ICON = '/assets/chippa/chisposita-circulo.png';
 
 function ExperienceMark({ value, fallback = '💫' }) {
@@ -76,18 +60,13 @@ function App() {
   const [showExperienceForm, setShowExperienceForm] = useState(false);
   const [showExperienceMenu, setShowExperienceMenu] = useState(false);
   const [profileMenu, setProfileMenu] = useState(false);
-  const [social, setSocial] = useState({ connections: [], invitations: [], requests: [], meetings: [] });
+  const [social, setSocial] = useState({ connections: [], requests: [], meetings: [] });
   const [friendsLoading, setFriendsLoading] = useState(false);
   const [friendsError, setFriendsError] = useState('');
   const [meetingFriend, setMeetingFriend] = useState(null);
   const [friendsVersion, setFriendsVersion] = useState(0);
+  const friendsLoadVersion = useRef(0);
   const inviteHandled = useRef(false);
-  const friendInviteNotified = useRef('');
-
-  useEffect(() => {
-    const token = new URLSearchParams(window.location.search).get('friend');
-    if (token) { try { window.sessionStorage.setItem('chippa-friend-invite', token); } catch { /* El enlace sigue disponible en la URL actual. */ } }
-  }, []);
 
   const acceptPendingInvite = useCallback(async (authUser) => {
     const code = new URLSearchParams(window.location.search).get('invite');
@@ -121,7 +100,7 @@ function App() {
         try {
           const loaded = await loadCloudState(data.session.user);
           if (!alive) return;
-          if (loaded) { hydrateCloudState(loaded, data.session.user); setPage(hasPendingFriendInvite() || !loaded.experience?.id ? 'friends' : 'dashboard'); }
+          if (loaded) { hydrateCloudState(loaded, data.session.user); setPage(!loaded.experience?.id ? 'friends' : 'dashboard'); }
           else setPage('friends');
         } catch (loadError) { notify(loadError.message || 'No pudimos cargar tus experiencias.'); setPage('welcome'); }
       }
@@ -136,7 +115,7 @@ function App() {
           await acceptPendingInvite(session.user);
           const loaded = await loadCloudState(session.user);
           if (!alive) return;
-          if (loaded) { hydrateCloudState(loaded, session.user); setPage(hasPendingFriendInvite() || !loaded.experience?.id ? 'friends' : 'dashboard'); }
+          if (loaded) { hydrateCloudState(loaded, session.user); setPage(!loaded.experience?.id ? 'friends' : 'dashboard'); }
           else setPage('friends');
         } catch (error) { notify(error.message || 'No pudimos abrir esta invitación.'); setPage('friends'); }
       }, 0);
@@ -180,36 +159,33 @@ function App() {
   const refreshFriends = useCallback(async () => {
     const { currentUser: activeUser, state: activeState } = socialContext.current;
     if (!activeUser || !activeState) return;
+    const requestVersion = ++friendsLoadVersion.current;
     setFriendsLoading(true); setFriendsError('');
-    try { const result = await loadFriends(activeUser, activeState); setSocial({ ...result, ownerId: activeUser.id }); return result; }
-    catch (error) { setFriendsError('No pudimos cargar tus amigos. Intenta nuevamente.'); throw error; }
-    finally { setFriendsLoading(false); }
+    try {
+      const result = await loadFriends(activeUser, activeState);
+      if (requestVersion === friendsLoadVersion.current && socialContext.current.currentUser?.id === activeUser.id) setSocial({ ...result, ownerId: activeUser.id });
+      return result;
+    } catch (error) {
+      if (requestVersion === friendsLoadVersion.current) setFriendsError('No pudimos cargar tus amigos. Intenta nuevamente.');
+      throw error;
+    } finally { if (requestVersion === friendsLoadVersion.current) setFriendsLoading(false); }
   }, []);
   useEffect(() => {
-    if (!currentUser || !state) { setSocial({ connections: [], invitations: [], requests: [], meetings: [] }); setFriendsLoading(false); return undefined; }
+    if (!currentUser || !state) { friendsLoadVersion.current += 1; setSocial({ connections: [], requests: [], meetings: [] }); setFriendsLoading(false); return undefined; }
     let active = true;
+    const requestVersion = ++friendsLoadVersion.current;
     setFriendsLoading(true);
     const loadSocial = async () => {
       try {
-        let result = await loadFriends(currentUser, state);
-        const inviteToken = page === 'friends' ? getPendingFriendInvite() : '';
-        if (inviteToken) {
-          await receiveFriendInvitation(currentUser, state.mode, inviteToken);
-          clearPendingFriendInvite();
-          result = await loadFriends(currentUser, state);
-          if (friendInviteNotified.current !== inviteToken) {
-            friendInviteNotified.current = inviteToken;
-            notify('Tienes una nueva solicitud de amistad. Puedes aceptarla o rechazarla.');
-          }
-        }
-        if (active) { setSocial({ ...result, ownerId: currentUser.id }); setFriendsError(''); }
+        const result = await loadFriends(currentUser, state);
+        if (active && requestVersion === friendsLoadVersion.current) { setSocial({ ...result, ownerId: currentUser.id }); setFriendsError(''); }
       } catch (loadError) {
-        if (active) setFriendsError(loadError.message || 'No pudimos cargar tus amigos. Intenta nuevamente.');
-      } finally { if (active) setFriendsLoading(false); }
+        if (active && requestVersion === friendsLoadVersion.current) setFriendsError(loadError.message || 'No pudimos cargar tus amigos. Intenta nuevamente.');
+      } finally { if (active && requestVersion === friendsLoadVersion.current) setFriendsLoading(false); }
     };
     loadSocial();
     return () => { active = false; };
-  }, [page, currentUser?.id, state?.mode, state?.experience?.id, friendsVersion]);
+  }, [currentUser?.id, state?.mode, state?.experience?.id, friendsVersion]);
   useEffect(() => {
     if (!currentUser || !state) return undefined;
     const refresh = () => { if (!document.hidden) refreshFriends().catch(() => {}); };
@@ -220,7 +196,6 @@ function App() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'friend_requests', filter: `sender_id=eq.${currentUser.id}` }, refresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'friendships', filter: `user_a=eq.${currentUser.id}` }, refresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'friendships', filter: `user_b=eq.${currentUser.id}` }, refresh)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'friend_invitations', filter: `owner_id=eq.${currentUser.id}` }, refresh)
       .subscribe() : null;
     return () => { window.removeEventListener('focus', refresh); window.removeEventListener('storage', refresh); window.removeEventListener('online', refresh); document.removeEventListener('visibilitychange', refresh); if (channel) supabase.removeChannel(channel); };
   }, [currentUser?.id, state?.mode, refreshFriends]);
@@ -232,7 +207,7 @@ function App() {
     if (demo.experience && !demo.experience.invitationCode) demo.experience.invitationCode = newInvitation();
     saveDemoState(demo);
     setState(demo);
-    setPage(hasPendingFriendInvite() || !demo.experience?.id ? 'friends' : 'dashboard');
+    setPage(!demo.experience?.id ? 'friends' : 'dashboard');
     notify('Tu espacio está listo en este dispositivo.');
   };
 
@@ -253,7 +228,7 @@ function App() {
         setUser(authUser);
         await acceptPendingInvite(authUser);
         const loaded = await loadCloudState(authUser);
-        if (loaded) { hydrateCloudState(loaded, authUser); setPage(hasPendingFriendInvite() || !loaded.experience?.id ? 'friends' : 'dashboard'); } else setPage('friends');
+        if (loaded) { hydrateCloudState(loaded, authUser); setPage(!loaded.experience?.id ? 'friends' : 'dashboard'); } else setPage('friends');
       }
     } catch (error) { notify(error.message || 'No pudimos continuar. Revisa tus datos.'); }
     finally { setBusy(false); }
@@ -412,7 +387,7 @@ function App() {
         </div>
       </header>
       {state.mode === 'demo' && import.meta.env.DEV && <div className="local-storage-notice"><span>ⓘ</span> Los cambios de esta vista se guardan en este dispositivo.</div>}
-      {page === 'friends' && <FriendsPage key={`${currentUser.id}:${friendsVersion}`} person={currentUser} state={state} social={social.ownerId === currentUser.id ? social : { connections: [], invitations: [], requests: [], meetings: [] }} loading={friendsLoading} error={friendsError} onRefresh={() => refreshFriends().catch(() => {})} onNewMeeting={newMeetingWith} onOpenMeeting={selectExperience} onToast={notify} />}
+      {page === 'friends' && <FriendsPage key={`${currentUser.id}:${friendsVersion}`} person={currentUser} state={state} social={social.ownerId === currentUser.id ? social : { connections: [], requests: [], meetings: [] }} loading={friendsLoading} error={friendsError} onRefresh={() => refreshFriends().catch(() => {})} onNewMeeting={newMeetingWith} onOpenMeeting={selectExperience} onToast={notify} />}
       {page === 'dashboard' && !state.experience?.id && <main className="content"><EmptyFriends title="Tu historia empieza con tus amigos." text="Invita a alguien, conecten y creen juntos su primer encuentro." action="Ver mis amigos" onClick={() => setPage('friends')} /></main>}
       {page === 'dashboard' && state.experience?.id && <Dashboard premiumActive={premiumActive} state={state} currentUser={currentUser} partner={partner} onOpen={openModule} onPage={changePage} onPremium={showPremiumNotice} onCreate={() => setPage('friends')} onInvite={invitePartner} onAcceptInvite={acceptDemoInvite} localPreview={localPreview} />}
       {page === 'games' && <GamesHub premiumActive={premiumActive} key={gamesFilter} initialFilter={gamesFilter} state={state} onOpen={openModule} onBack={() => setPage('dashboard')} />}

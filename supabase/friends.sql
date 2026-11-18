@@ -31,9 +31,6 @@ do $$ begin
   alter publication supabase_realtime add table public.friendships;
 exception when duplicate_object then null; end $$;
 do $$ begin
-  alter publication supabase_realtime add table public.friend_invitations;
-exception when duplicate_object then null; end $$;
-do $$ begin
   alter publication supabase_realtime add table public.friend_requests;
 exception when duplicate_object then null; end $$;
 create index if not exists friendships_peer_idx on public.friendships(user_b);
@@ -51,12 +48,9 @@ alter table public.friend_invitations enable row level security;
 alter table public.friend_requests enable row level security;
 alter table public.friend_requests replica identity full;
 grant select on public.friendships to authenticated;
-grant select(id,owner_id,recipient_label,created_at,expires_at,accepted_at,accepted_by,revoked_at) on public.friend_invitations to authenticated;
 grant select on public.friend_requests to authenticated;
 drop policy if exists "Friends read own connections" on public.friendships;
 create policy "Friends read own connections" on public.friendships for select to authenticated using(auth.uid() in (user_a,user_b));
-drop policy if exists "Owners read friend invitations" on public.friend_invitations;
-create policy "Owners read friend invitations" on public.friend_invitations for select to authenticated using(owner_id=auth.uid());
 drop policy if exists "Participants read friend requests" on public.friend_requests;
 create policy "Participants read friend requests" on public.friend_requests for select to authenticated using(auth.uid() in (sender_id,recipient_id));
 drop policy if exists "Friends read connected profiles" on public.profiles;
@@ -64,41 +58,46 @@ create policy "Friends read connected profiles" on public.profiles for select to
 drop policy if exists "Profiles visible in friend requests" on public.profiles;
 create policy "Profiles visible in friend requests" on public.profiles for select to authenticated using(exists(select 1 from public.friend_requests r where (r.sender_id=auth.uid() and r.recipient_id=profiles.id) or (r.recipient_id=auth.uid() and r.sender_id=profiles.id)));
 
-create or replace function public.create_friend_invitation(p_label text default '')
-returns text language plpgsql security definer set search_path=public,extensions as $$
-declare token text;
+create or replace function public.search_friend_profiles(p_query text)
+returns table(profile_id uuid, profile_name text, profile_avatar text)
+language plpgsql stable security definer set search_path=public as $$
+declare search_text text := trim(coalesce(p_query, ''));
 begin
-  if auth.uid() is null then raise exception 'Inicia sesión para invitar.'; end if;
-  if char_length(trim(p_label)) > 60 then raise exception 'Usa un nombre de hasta 60 caracteres.'; end if;
-  token := encode(extensions.gen_random_bytes(24),'hex');
-  insert into public.friend_invitations(owner_id,token_hash,recipient_label) values(auth.uid(),encode(extensions.digest(token,'sha256'),'hex'),trim(p_label));
-  return token;
+  if auth.uid() is null then raise exception 'Inicia sesión para buscar perfiles.'; end if;
+  if char_length(search_text) < 2 then raise exception 'Escribe al menos 2 caracteres para buscar.'; end if;
+  if char_length(search_text) > 60 then raise exception 'La búsqueda no puede superar 60 caracteres.'; end if;
+  return query
+  select p.id, p.name, p.avatar from public.profiles p
+  where p.id <> auth.uid() and strpos(lower(p.name), lower(search_text)) > 0
+  order by lower(p.name), p.id limit 20;
 end; $$;
-create or replace function public.receive_friend_invitation(p_token text)
-returns uuid language plpgsql security definer set search_path=public,extensions as $$
-declare invitation public.friend_invitations; request_id uuid; request_recipient uuid; request_status text;
+
+create or replace function public.send_friend_request(p_recipient_id uuid)
+returns uuid language plpgsql security definer set search_path=public as $$
+declare caller_id uuid := auth.uid(); existing_id uuid; existing_sender uuid; request_id uuid;
 begin
-  if auth.uid() is null then raise exception 'Inicia sesión para recibir la solicitud.'; end if;
-  select * into invitation from public.friend_invitations where token_hash=encode(extensions.digest(trim(p_token),'sha256'),'hex') for update;
-  if not found then raise exception 'La invitación no está disponible o ya venció.'; end if;
-  if invitation.owner_id=auth.uid() then raise exception 'Este enlace es tuyo. Compártelo con la persona que quieres agregar.'; end if;
-  select id,recipient_id,status into request_id,request_recipient,request_status from public.friend_requests where invitation_id=invitation.id;
-  if found then
-    if request_recipient=auth.uid() and request_status='pending' then return request_id; end if;
-    if request_recipient=auth.uid() and request_status='accepted' then raise exception 'Ya están conectados como amigos.'; end if;
-    if request_recipient=auth.uid() then raise exception 'Esta solicitud ya fue rechazada.'; end if;
-    raise exception 'Este enlace ya fue utilizado.';
+  if caller_id is null then raise exception 'Inicia sesión para enviar una solicitud.'; end if;
+  if p_recipient_id is null or p_recipient_id = caller_id then raise exception 'Elige otro perfil para agregar.'; end if;
+  if not exists(select 1 from public.profiles where id = p_recipient_id) then raise exception 'No encontramos ese perfil.'; end if;
+  perform pg_advisory_xact_lock(hashtextextended(least(caller_id::text, p_recipient_id::text) || ':' || greatest(caller_id::text, p_recipient_id::text), 0));
+  if exists(select 1 from public.friendships where user_a = least(caller_id, p_recipient_id) and user_b = greatest(caller_id, p_recipient_id)) then raise exception 'Ya son amigos.'; end if;
+  select r.id, r.sender_id into existing_id, existing_sender
+  from public.friend_requests r
+  where r.status = 'pending' and ((r.sender_id = caller_id and r.recipient_id = p_recipient_id) or (r.sender_id = p_recipient_id and r.recipient_id = caller_id))
+  order by r.created_at desc limit 1 for update;
+  if existing_id is not null then
+    if existing_sender = caller_id then return existing_id; end if;
+    raise exception 'Esta persona ya te envió una solicitud. Revísala en tu bandeja.';
   end if;
-  if invitation.accepted_at is not null or invitation.revoked_at is not null or invitation.expires_at <= now() then raise exception 'La invitación no está disponible o ya venció.'; end if;
-  if exists(select 1 from public.friendships where user_a=least(invitation.owner_id,auth.uid()) and user_b=greatest(invitation.owner_id,auth.uid())) then raise exception 'Ya están conectados como amigos.'; end if;
-  insert into public.friend_requests(sender_id,recipient_id,invitation_id) values(invitation.owner_id,auth.uid(),invitation.id) on conflict do nothing returning id into request_id;
-  if request_id is null then
-    select id into request_id from public.friend_requests where sender_id=invitation.owner_id and recipient_id=auth.uid() and status='pending';
-  end if;
-  if request_id is null then raise exception 'No pudimos crear la solicitud. Pídele a tu amigo un enlace nuevo.'; end if;
-  update public.friend_invitations set accepted_at=now(),accepted_by=auth.uid() where id=invitation.id;
+  begin
+    insert into public.friend_requests(sender_id, recipient_id, status) values (caller_id, p_recipient_id, 'pending') returning id into request_id;
+  exception when unique_violation then
+    select r.id into request_id from public.friend_requests r where r.sender_id = caller_id and r.recipient_id = p_recipient_id and r.status = 'pending';
+    if request_id is null then raise; end if;
+  end;
   return request_id;
 end; $$;
+
 create or replace function public.respond_friend_request(p_request_id uuid,p_accept boolean)
 returns uuid language plpgsql security definer set search_path=public as $$
 declare request_row public.friend_requests%rowtype; a uuid; b uuid;
@@ -115,12 +114,6 @@ begin
   end if;
   return request_row.sender_id;
 end; $$;
-create or replace function public.revoke_friend_invitation(p_id uuid)
-returns void language plpgsql security definer set search_path=public as $$
-begin
-  if auth.uid() is null then raise exception 'Inicia sesión.'; end if;
-  update public.friend_invitations set revoked_at=now() where id=p_id and owner_id=auth.uid() and accepted_at is null;
-end; $$;
 create or replace function public.create_friend_experience(p_friend_id uuid,p_title text,p_date date,p_place text,p_description text default '',p_emoji text default '💫')
 returns uuid language plpgsql security definer set search_path=public as $$
 declare created_id uuid;
@@ -133,5 +126,12 @@ begin
   return created_id;
 end; $$;
 drop function if exists public.accept_friend_invitation(text);
-revoke all on function public.create_friend_invitation(text),public.receive_friend_invitation(text),public.respond_friend_request(uuid,boolean),public.revoke_friend_invitation(uuid),public.create_friend_experience(uuid,text,date,text,text,text) from public,anon;
-grant execute on function public.create_friend_invitation(text),public.receive_friend_invitation(text),public.respond_friend_request(uuid,boolean),public.revoke_friend_invitation(uuid),public.create_friend_experience(uuid,text,date,text,text,text) to authenticated;
+revoke select(id,owner_id,recipient_label,created_at,expires_at,accepted_at,accepted_by,revoked_at) on public.friend_invitations from authenticated;
+revoke all on table public.friend_invitations from public,anon,authenticated;
+do $$ begin
+  if exists(select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='friend_invitations') then
+    alter publication supabase_realtime drop table public.friend_invitations;
+  end if;
+end $$;
+revoke all on function public.respond_friend_request(uuid,boolean),public.create_friend_experience(uuid,text,date,text,text,text),public.search_friend_profiles(text),public.send_friend_request(uuid) from public,anon;
+grant execute on function public.respond_friend_request(uuid,boolean),public.create_friend_experience(uuid,text,date,text,text,text),public.search_friend_profiles(text),public.send_friend_request(uuid) to authenticated;

@@ -1,18 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Avatar from './Avatar.jsx';
 import { labelDate } from './lib/format.js';
-import { inviteFriend, meetingsWithFriend, receiveFriendInvitation, respondFriendRequest, revokeFriendInvitation, sharedInteractions } from './lib/friendsStore.js';
+import { meetingsWithFriend, respondFriendRequest, searchFriendProfiles, sendFriendRequest, sharedInteractions } from './lib/friendsStore.js';
 
 export default function FriendsPage({ person, state, social, loading, error, onRefresh, onNewMeeting, onOpenMeeting, onToast }) {
   const [selected, setSelected] = useState(null);
   const [query, setQuery] = useState('');
+  const [profileSearch, setProfileSearch] = useState('');
+  const [profileResults, setProfileResults] = useState([]);
+  const [searchingProfiles, setSearchingProfiles] = useState(false);
+  const [profileSearchError, setProfileSearchError] = useState('');
   const [detailTab, setDetailTab] = useState('meetings');
-  const initialCode = new URLSearchParams(window.location.search).get('friend') || (() => { try { return window.sessionStorage.getItem('chippa-friend-invite') || ''; } catch { return ''; } })();
-  const codeCameFromLink = useRef(Boolean(initialCode));
-  const [tab, setTab] = useState(initialCode ? 'requests' : 'friends');
-  const [code, setCode] = useState(initialCode);
-  const [link, setLink] = useState('');
-  const [inviteCode, setInviteCode] = useState('');
+  const [tab, setTab] = useState('friends');
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState('');
   const friends = social.connections || [];
@@ -30,46 +29,38 @@ export default function FriendsPage({ person, state, social, loading, error, onR
     catch (failure) { setFormError(failure.message || 'No pudimos completar la acción. Intenta nuevamente.'); }
     finally { setBusy(false); }
   };
-  const create = (event) => {
-    event.preventDefault();
-    action(async () => {
-      const token = await inviteFriend(person, state.mode, '');
-      const url = new URL(window.location.href);
-      url.search = '';
-      url.searchParams.set('friend', token);
-      setLink(url.toString());
-      setInviteCode(token);
-    });
-  };
-  const receive = (event) => {
-    event.preventDefault();
-    action(async () => {
-      await receiveFriendInvitation(person, state.mode, code);
-      setCode('');
-      try { window.sessionStorage.removeItem('chippa-friend-invite'); } catch { /* La sesión puede no permitir almacenamiento. */ }
-      const url = new URL(window.location.href);
-      url.searchParams.delete('friend');
-      window.history.replaceState(null, '', url);
-      setTab('requests');
-      onToast('La solicitud llegó a tus notificaciones. Puedes aceptarla o rechazarla.');
-    });
-  };
+  const addFriend = (profile) => action(async () => {
+    await sendFriendRequest(state.mode, profile.id);
+    onToast(`Solicitud enviada a ${profile.name}.`);
+  });
   const respond = (request, accept) => action(async () => {
     await respondFriendRequest(person, state.mode, request.id, accept);
     if (accept) setTab('friends');
     onToast(accept ? `Ahora tú y ${request.sender.name} son amigos.` : 'Solicitud de amistad rechazada.');
   });
-  const copyText = async (value, label) => {
-    try { await navigator.clipboard.writeText(value); onToast(`${label} copiado.`); }
-    catch { onToast('No pudimos copiarlo automáticamente. Selecciona el texto y cópialo.'); }
-  };
-
   useEffect(() => {
-    if (!codeCameFromLink.current || new URLSearchParams(window.location.search).has('friend')) return;
-    try { if (window.sessionStorage.getItem('chippa-friend-invite')) return; } catch { /* El enlace se puede procesar aunque el almacenamiento esté bloqueado. */ }
-    codeCameFromLink.current = false;
-    setCode('');
-  }, [initialCode]);
+    const term = profileSearch.trim();
+    if (term.length < 2) {
+      setProfileResults([]);
+      setSearchingProfiles(false);
+      setProfileSearchError('');
+      return undefined;
+    }
+    let active = true;
+    setSearchingProfiles(true);
+    setProfileSearchError('');
+    const timer = window.setTimeout(async () => {
+      try {
+        const results = await searchFriendProfiles(state.mode, term);
+        if (active) setProfileResults(results);
+      } catch (failure) {
+        if (active) setProfileSearchError(failure.message || 'No pudimos buscar perfiles. Intenta nuevamente.');
+      } finally {
+        if (active) setSearchingProfiles(false);
+      }
+    }, 250);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [profileSearch, state.mode]);
 
   if (friend) return <main className="content friends-page">
     <button className="back-link" onClick={() => setSelected(null)}>← Todos mis amigos</button>
@@ -80,7 +71,7 @@ export default function FriendsPage({ person, state, social, loading, error, onR
   </main>;
 
   return <main className="content friends-page">
-    <section className="friends-hero"><div><div className="eyebrow">LAS HISTORIAS EMPIEZAN CON ALGUIEN</div><h1>Mis amigos.</h1><p>Conecten primero. Después, creen encuentros y coleccionen recuerdos juntos.</p><button className="primary-button" onClick={() => setTab('requests')}>Invitar a un amigo <span>＋</span></button></div><img src="/assets/chippa/corazones-entrelazados.png" alt="" /></section>
+    <section className="friends-hero"><div><div className="eyebrow">LAS HISTORIAS EMPIEZAN CON ALGUIEN</div><h1>Mis amigos.</h1><p>Conecten primero. Después, creen encuentros y coleccionen recuerdos juntos.</p><button className="primary-button" onClick={() => setTab('requests')}>Agregar amigo <span>＋</span></button></div><img src="/assets/chippa/corazones-entrelazados.png" alt="" /></section>
     <div className="friends-toolbar"><div className="friends-tabs" role="group" aria-label="Amigos y solicitudes"><button aria-pressed={tab === 'friends'} onClick={() => setTab('friends')}>Amigos <span>{friends.length}</span></button><button aria-pressed={tab === 'requests'} onClick={() => setTab('requests')}>Solicitudes{incoming.length > 0 && <span className="request-count">{incoming.length}</span>}</button></div>{tab === 'friends' && <input type="search" aria-label="Buscar amigo" placeholder="Buscar por nombre…" value={query} onChange={(event) => setQuery(event.target.value)} />}</div>
     {error && <div className="friends-error" role="alert">{error}<button className="text-button" onClick={onRefresh}>Volver a intentar</button></div>}
     {formError && <p className="form-error" role="alert">{formError}</p>}
@@ -91,26 +82,34 @@ export default function FriendsPage({ person, state, social, loading, error, onR
         const encounters = meetingsWithFriend(social.meetings || [], person.id, entry.id);
         return <button className="friend-card" key={entry.id} onClick={() => setSelected(entry.id)}><Avatar value={entry.avatar} /><span><b>{entry.name}</b><small>Conectados en CHIPPA</small><span>{encounters.length ? `${encounters.length} encuentros para recordar` : 'Su primer encuentro los espera'}</span></span><i>Ver su historia →</i></button>;
       })}
-      {!friends.length && !loading && !error && <Empty title="Una nueva amistad, muchas historias." text="Comparte un enlace. Cuando la otra persona lo abra, recibirá una solicitud de amistad para aceptar o rechazar." onClick={() => setTab('requests')} action="Invitar a mi primer amigo" />}
+      {!friends.length && !loading && !error && <Empty title="Una nueva amistad, muchas historias." text="Busca el perfil de tu amigo y envíale una solicitud. Cuando la acepte, podrán crear encuentros juntos." onClick={() => setTab('requests')} action="Agregar a un amigo" />}
       {friends.length > 0 && !friends.some((entry) => entry.name.toLowerCase().includes(query.toLowerCase())) && <p>No encontramos un amigo con ese nombre.</p>}
     </div> : <div className="friend-requests-page">
-      <section className="module-panel friend-invite"><div className="eyebrow">INVITA CON UN ENLACE O CÓDIGO</div><h2>Que empiece una nueva amistad.</h2><p>Comparte el enlace o el código. Cuando tu amigo lo abra desde su perfil, verá tu solicitud y podrá decidir si conectarse.</p>
-        {!link ? <form onSubmit={create}><button className="primary-button" disabled={busy}>Crear enlace y código →</button></form> : <div className="friend-created-link"><b>Tu invitación está lista</b><label>Enlace<input readOnly value={link} onFocus={(event) => event.target.select()} /></label><div className="invite-copy-actions"><button className="secondary-button" onClick={() => copyText(link, 'Enlace')}>Copiar enlace</button><label>Código<input readOnly value={inviteCode} onFocus={(event) => event.target.select()} /></label><button className="secondary-button" onClick={() => copyText(inviteCode, 'Código')}>Copiar código</button></div><p>El enlace y el código vencen en 7 días y sirven una sola vez.</p></div>}
+      <section className="module-panel friend-invite"><div className="eyebrow">ENCUENTRA A TU AMIGO</div><h2>Envía una solicitud directa.</h2><p>Busca su perfil por nombre. La solicitud aparecerá en sus notificaciones para que pueda aceptarla o rechazarla.</p>
+        <label className="friend-profile-search">Nombre del perfil<input type="search" value={profileSearch} onChange={(event) => setProfileSearch(event.target.value)} placeholder="Escribe al menos 2 caracteres" disabled={state.mode !== 'cloud'} /></label>
+        {state.mode !== 'cloud' && <p>Inicia sesión para buscar perfiles y enviar solicitudes de amistad.</p>}
+        {profileSearchError && <p className="form-error" role="alert">{profileSearchError}</p>}
+        {searchingProfiles && <p role="status">Buscando perfiles…</p>}
+        {profileSearch.trim().length >= 2 && !searchingProfiles && !profileSearchError && <div className="friend-profile-results">
+          {profileResults.map((profile) => {
+            const alreadyFriend = friends.some((entry) => entry.id === profile.id);
+            const alreadySent = outgoing.some((request) => request.recipientId === profile.id && request.status === 'pending');
+            const received = incoming.some((request) => request.senderId === profile.id);
+            return <article className="friend-profile-result" key={profile.id}><Avatar value={profile.avatar} /><div><b>{profile.name}</b><span>Perfil CHIPPA</span></div>
+              {alreadyFriend ? <span className="friend-profile-status">Ya son amigos</span> : alreadySent ? <span className="friend-profile-status">Solicitud enviada</span> : received ? <span className="friend-profile-status">Te envió una solicitud</span> : <button className="primary-button" disabled={busy} onClick={() => addFriend(profile)}>Enviar solicitud</button>}
+            </article>;
+          })}
+          {!profileResults.length && <p className="friend-request-empty">No encontramos perfiles con ese nombre.</p>}
+        </div>}
       </section>
-
-      <section className={`friend-accept module-panel ${code ? 'friend-accept-highlight' : ''}`}><div><div className="eyebrow">¿TE COMPARTIERON UNA INVITACIÓN?</div><h2>Revisa la solicitud.</h2><p>Al continuar, aparecerá en tus solicitudes para que la aceptes o la rechaces.</p></div><form onSubmit={receive}><label>Enlace o código<input value={code} onChange={(event) => setCode(event.target.value)} placeholder="Pega aquí la invitación" required /></label><button className="secondary-button" disabled={busy || loading || !code.trim()}>Recibir solicitud</button></form></section>
 
       <section className="friend-request-list"><div className="friend-list-heading"><div><div className="eyebrow">TU BANDEJA</div><h2>Solicitudes de amistad</h2></div>{incoming.length > 0 && <span className="request-count request-count-large">{incoming.length} nueva{incoming.length === 1 ? '' : 's'}</span>}</div>
         {incoming.map((request) => <article className="friend-request-card" key={request.id}><Avatar value={request.sender.avatar} /><div className="friend-request-copy"><b>{request.sender.name}</b><span>quiere conectar contigo</span><small>{new Date(request.createdAt).toLocaleDateString('es-CL', { day: 'numeric', month: 'long' })}</small></div><div className="friend-request-actions"><button className="primary-button" disabled={busy} onClick={() => respond(request, true)}>Aceptar</button><button className="text-button" disabled={busy} onClick={() => respond(request, false)}>Rechazar</button></div></article>)}
         {!incoming.length && !loading && <p className="friend-request-empty">No tienes solicitudes pendientes.</p>}
       </section>
 
-      {!!outgoing.length && <section className="friend-request-list outgoing-requests"><div className="friend-list-heading"><div><div className="eyebrow">ENVIADAS</div><h2>Solicitudes que compartiste</h2></div></div>{outgoing.map((request) => <article key={request.id}><Avatar value={request.recipient.avatar} /><div className="friend-request-copy"><b>{request.recipient.name}</b><span>{request.status === 'pending' ? 'Solicitud pendiente' : request.status === 'accepted' ? 'Ya son amigos' : 'Solicitud rechazada'}</span></div><small>{new Date(request.createdAt).toLocaleDateString('es-CL', { day: 'numeric', month: 'long' })}</small></article>)}</section>}
+      {!!outgoing.length && <section className="friend-request-list outgoing-requests"><div className="friend-list-heading"><div><div className="eyebrow">ENVIADAS</div><h2>Solicitudes enviadas</h2></div></div>{outgoing.map((request) => <article key={request.id}><Avatar value={request.recipient.avatar} /><div className="friend-request-copy"><b>{request.recipient.name}</b><span>{request.status === 'pending' ? 'Solicitud pendiente' : request.status === 'accepted' ? 'Ya son amigos' : 'Solicitud rechazada'}</span></div><small>{new Date(request.createdAt).toLocaleDateString('es-CL', { day: 'numeric', month: 'long' })}</small></article>)}</section>}
 
-      {!!social.invitations?.length && <details className="shared-invitations"><summary>Enlaces creados anteriormente</summary><div className="invitation-list">{social.invitations.map((entry) => {
-        const status = entry.revokedAt ? 'Cancelada' : new Date(entry.expiresAt) <= new Date() ? 'Vencida' : entry.requestStatus === 'pending' ? 'Solicitud pendiente' : entry.requestStatus === 'accepted' ? 'Amistad confirmada' : entry.requestStatus === 'declined' ? 'Solicitud rechazada' : entry.acceptedAt ? 'Enlace utilizado' : 'Enlace activo';
-        return <article key={entry.id}><div><b>{entry.label || 'Invitación de amistad'}</b><small>{status}</small></div>{status === 'Enlace activo' && <button className="text-button" disabled={busy} onClick={() => action(async () => { await revokeFriendInvitation(person, state.mode, entry.id); onToast('Enlace cancelado.'); })}>Cancelar enlace</button>}</article>;
-      })}</div></details>}
     </div>}
   </main>;
 }
