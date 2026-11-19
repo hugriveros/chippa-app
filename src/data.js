@@ -17,7 +17,7 @@ export const modules = [
   { id: 'guess-the-place', title: 'Adivina el lugar', desc: 'Descubran el destino con pistas.', emoji: '📍', group: 'Juegos', tone: 'mint', premium: true },
   { id: 'questions', title: 'Banco de preguntas', desc: 'Elijan una conversación al azar.', emoji: '🗂️', group: 'Conózcanse', tone: 'peach' },
   { id: 'passport', title: 'Pasaporte digital', desc: 'Un nuevo lugar para su colección.', emoji: '🛂', art: '/assets/chippa/sello-avion.png', group: 'Guarden recuerdos', tone: 'lilac' },
-  { id: 'capsule', title: 'Cápsula compartida', desc: 'Los mejores momentos merecen quedarse.', emoji: '📸', group: 'Guarden recuerdos', tone: 'pink', premium: true },
+  { id: 'capsule', title: 'Cápsula compartida', desc: 'Los mejores momentos merecen quedarse.', emoji: '📸', group: 'Guarden recuerdos', tone: 'pink' },
   { id: 'future', title: 'Carta del futuro', desc: 'Un mensaje que espera su momento.', emoji: '⏳', group: 'Guarden recuerdos', tone: 'sky', premium: true },
   { id: 'playlist', title: 'Playlist de la cita', desc: 'La banda sonora de este capítulo.', emoji: '🎧', group: 'Guarden recuerdos', tone: 'mint', premium: true },
   { id: 'plans', title: 'Generador de planes', desc: 'Una idea nueva según sus gustos.', emoji: '🎲', group: 'Aventuras', tone: 'butter', premium: true }

@@ -30,7 +30,6 @@ const navigationItems = [
   { target: 'passport', label: 'Pasaporte', icon: 'passport' }
 ];
 const outingPages = ['outing-detail', 'games', 'module', 'results'];
-const capsuleIsPremium = modules.some((item) => item.id === 'capsule' && item.premium);
 
 function ExperienceMark({ value, fallback = '💫' }) {
   const mark = value || fallback;
@@ -53,10 +52,6 @@ function SidebarIcon({ name }) {
     passport: <><path d="M12 7h16a3 3 0 0 1 3 3v21H14a4 4 0 0 1-4-4V9a2 2 0 0 1 2-2Z" fill="white" /><path d="M14 7v24" stroke="#FFD23F" strokeWidth="2" /><circle cx="22" cy="18" r="5.5" fill="#F8E5F2" stroke="#B32E88" strokeWidth="1.5" /><path d="m19 18 2 2 4-5" stroke="#7A43BA" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /><path d="M18 27h9" stroke="#B32E88" strokeWidth="1.5" strokeLinecap="round" /></>
   };
   return <span className={`sidebar-icon-box sidebar-icon-${name}`} aria-hidden="true"><svg viewBox="0 0 40 40" focusable="false">{artwork[name]}</svg></span>;
-}
-
-function PremiumLockIcon() {
-  return <svg className="premium-lock-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="4.5" y="8.5" width="11" height="9" rx="2" /><path d="M7 8.5V6a3 3 0 0 1 6 0v2.5" /><path d="M10 12v2" /></svg>;
 }
 
 function ExperienceDateField({ value, onChange }) {
@@ -374,7 +369,7 @@ function App() {
     } catch (error) { notify(error.message || 'No pudimos salir de la experiencia.'); }
   };
 
-  const showPremiumNotice = (id = 'capsule') => setPremiumItem(modules.find((item) => item.id === id) || { id: 'subscription', title: 'CHIPPA Premium' });
+  const showPremiumNotice = (id) => setPremiumItem(modules.find((item) => item.id === id) || { id: 'subscription', title: 'CHIPPA Premium' });
   const changePage = (next) => {
     if (next === 'friends') setFriendsVersion((version) => version + 1);
     if (!state.experience?.id && !['friends','dashboard','outings'].includes(next)) { setPage('outings'); notify('Crea una salida para empezar.'); return; }
@@ -382,7 +377,6 @@ function App() {
     if (['games', 'results', 'capsule', 'passport'].includes(next)) {
       setActivityReturnPage(page === 'outing-detail' ? 'outing-detail' : 'dashboard');
     }
-    if (!premiumActive && next === 'capsule' && capsuleIsPremium) { showPremiumNotice(); return; }
     setPage(next); setProfileMenu(false);
   };
   const openModule = (id) => {
@@ -416,7 +410,7 @@ function App() {
   const navigationSection = page === 'module' && activityReturnPage !== 'outing-detail' && moduleId === 'capsule'
     ? 'capsule'
     : outingPages.includes(page) ? 'outings' : page;
-  const navigationProps = { activeSection: navigationSection, premiumActive, setPage: changePage, friendRequestCount: pendingFriendRequests };
+  const navigationProps = { activeSection: navigationSection, setPage: changePage, friendRequestCount: pendingFriendRequests };
 
   return <div className="app-shell">
     <Sidebar {...navigationProps} />
@@ -445,7 +439,7 @@ function App() {
         currentUser={currentUser} partner={partner} currentMember={currentMember}
         onBack={() => modules.find((item) => item.id === moduleId)?.group === 'Juegos' ? setPage('games') : backFromActivity()} onNavigate={openModule} onToast={notify} />}
       {page === 'results' && <ResultsPage state={state} onOpen={openModule} onBack={backFromActivity} update={update} />}
-      {page === 'capsule' && <ExperienceModule moduleId="capsule" state={state} update={update} updateMember={updateMember} currentUser={currentUser} partner={partner} currentMember={currentMember} onBack={backFromActivity} onToast={notify} />}
+      {page === 'capsule' && <ExperienceModule key={`${state.experience.id}:capsule:${state.activeUserId}`} moduleId="capsule" state={state} update={update} updateMember={updateMember} currentUser={currentUser} partner={partner} currentMember={currentMember} onBack={backFromActivity} onToast={notify} />}
       {page === 'passport' && <ExperienceModule moduleId="passport" state={state} update={update} updateMember={updateMember} currentUser={currentUser} partner={partner} currentMember={currentMember} onBack={backFromActivity} onToast={notify} />}
       {showExperienceForm && <ExperienceForm friend={meetingFriend} friends={social.connections || []} onClose={() => { setShowExperienceForm(false); setMeetingFriend(null); }} onSubmit={createExperience} busy={busy} />}
       <nav className="mobile-nav" aria-label="Navegación principal"><NavigationButtons {...navigationProps} mobile /></nav>
@@ -537,22 +531,19 @@ function Sidebar(props) {
   </aside>;
 }
 
-function NavigationButtons({ activeSection, premiumActive, setPage, friendRequestCount, mobile = false }) {
+function NavigationButtons({ activeSection, setPage, friendRequestCount, mobile = false }) {
   return navigationItems.map(({ target, icon, label }) => {
     const active = activeSection === target;
-    const locked = target === 'capsule' && capsuleIsPremium && !premiumActive;
     return <button
       type="button"
       key={target}
       className={[!mobile && 'side-link', active && 'active'].filter(Boolean).join(' ')}
       onClick={() => setPage(target)}
       aria-current={active ? 'page' : undefined}
-      title={locked ? 'Contenido Premium bloqueado' : undefined}
     >
       <SidebarIcon name={icon} />
       {label}
       {target === 'friends' && friendRequestCount > 0 && <i className="friend-nav-badge" aria-label={`${friendRequestCount} solicitudes pendientes`}>{friendRequestCount}</i>}
-      {locked && <span className={mobile ? 'mobile-premium-lock' : 'side-premium-lock'} role="img" aria-label="Premium"><PremiumLockIcon /></span>}
     </button>;
   });
 }

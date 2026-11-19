@@ -114,14 +114,44 @@ export async function loadCloudState(user, requestedExperienceId) {
   };
 }
 
-export async function saveCloudState(state, userId) {
+async function saveSharedExperience(state, userId, previousMemories) {
+  const experienceId = state.experience.id;
+  const snapshot = stripPersonalState(state);
+  const before = new Map(previousMemories.filter((memory) => memory.ownerId === userId).map((memory) => [memory.id, memory]));
+  const after = new Map((state.shared?.memories || []).filter((memory) => memory.ownerId === userId).map((memory) => [memory.id, memory]));
+  const deleted = new Set([...before.keys()].filter((id) => !after.has(id)));
+  const changed = new Map([...after].filter(([id, memory]) => JSON.stringify(before.get(id)) !== JSON.stringify(memory)));
+
+  // Retry if the other participant saves after we read the row. Only apply this author's edits.
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const { data: remote, error: readError } = await supabase.from('experience_state')
+      .select('shared_data, updated_at').eq('experience_id', experienceId).maybeSingle();
+    if (readError) throw readError;
+
+    const retained = (remote?.shared_data?.shared?.memories || []).filter((memory) =>
+      memory.ownerId !== userId || (!deleted.has(memory.id) && !changed.has(memory.id))
+    );
+    const memories = [...changed.values(), ...retained];
+    const sharedData = { ...snapshot, shared: { ...snapshot.shared, memories } };
+    const previousTime = remote ? Date.parse(remote.updated_at) || 0 : 0;
+    const updatedAt = new Date(Math.max(Date.now(), previousTime + 1)).toISOString();
+    const write = remote
+      ? supabase.from('experience_state').update({ shared_data: sharedData, updated_at: updatedAt })
+        .eq('experience_id', experienceId).eq('updated_at', remote.updated_at)
+      : supabase.from('experience_state').upsert({
+        experience_id: experienceId, shared_data: sharedData, updated_at: updatedAt
+      }, { onConflict: 'experience_id', ignoreDuplicates: true });
+    const { data: written, error: writeError } = await write.select('experience_id').maybeSingle();
+    if (writeError) throw writeError;
+    if (written) return;
+  }
+  throw new Error('La salida está recibiendo otros cambios. Vuelve a intentar la sincronización.');
+}
+
+export async function saveCloudState(state, userId, previousMemories = [], onSharedSaved) {
   if (!state.experience?.id || !userId) return;
-  const { error: sharedError } = await supabase.from('experience_state').upsert({
-    experience_id: state.experience.id,
-    shared_data: stripPersonalState(state),
-    updated_at: new Date().toISOString()
-  }, { onConflict: 'experience_id' });
-  if (sharedError) throw sharedError;
+  await saveSharedExperience(state, userId, previousMemories);
+  onSharedSaved?.();
 
   const own = state.memberData?.[userId] || {};
   const publicData = shareableProjection(own);

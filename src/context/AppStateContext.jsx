@@ -19,6 +19,7 @@ export function AppStateProvider({ children }) {
   const cloudUserRef = useRef(null);
   const syncKeyRef = useRef('');
   const lastSavedSignatureRef = useRef('');
+  const savedMemoriesRef = useRef({ items: [] });
   const dirtyRef = useRef(false);
   const saveQueueRef = useRef(Promise.resolve());
   const refreshInFlightRef = useRef(false);
@@ -35,12 +36,14 @@ export function AppStateProvider({ children }) {
     if (!nextUser) {
       syncKeyRef.current = '';
       lastSavedSignatureRef.current = '';
+      savedMemoriesRef.current = { items: [] };
       dirtyRef.current = false;
       return;
     }
     if (previousId && previousId !== nextUser.id) {
       syncKeyRef.current = '';
       lastSavedSignatureRef.current = '';
+      savedMemoriesRef.current = { items: [] };
       dirtyRef.current = false;
       refreshPendingRef.current = false;
     }
@@ -55,12 +58,14 @@ export function AppStateProvider({ children }) {
     if (key && key !== syncKeyRef.current) {
       syncKeyRef.current = key;
       lastSavedSignatureRef.current = '';
+      savedMemoriesRef.current = { items: [] };
       dirtyRef.current = true;
     }
     if (key) dirtyRef.current = cloudSnapshotSignature(next, user.id) !== lastSavedSignatureRef.current;
     else if (!next || next.mode !== 'cloud') {
       syncKeyRef.current = '';
       lastSavedSignatureRef.current = '';
+      savedMemoriesRef.current = { items: [] };
       dirtyRef.current = false;
     }
     setStateValue(next);
@@ -74,6 +79,7 @@ export function AppStateProvider({ children }) {
     const key = cloudKey(next, user);
     syncKeyRef.current = key;
     lastSavedSignatureRef.current = key ? cloudSnapshotSignature(next, user.id) : '';
+    savedMemoriesRef.current = { items: next?.shared?.memories || [] };
     dirtyRef.current = false;
     stateRef.current = next;
     setStateValue(next);
@@ -136,24 +142,31 @@ export function AppStateProvider({ children }) {
     const latest = stateRef.current;
     const latestUser = cloudUserRef.current;
     const key = cloudKey(latest, latestUser);
-    if (!key || !dirtyRef.current || !latestUser?.id) return;
+    if (!key || !dirtyRef.current || !latestUser?.id) return true;
 
     const latestSignature = cloudSnapshotSignature(latest, latestUser.id);
-    const task = saveQueueRef.current.catch(() => {}).then(() => saveCloudState(latest, latestUser.id));
+    const savedMemories = savedMemoriesRef.current;
+    const task = saveQueueRef.current.catch(() => {}).then(() =>
+      saveCloudState(latest, latestUser.id, savedMemories.items, () => {
+        savedMemories.items = latest.shared?.memories || [];
+      })
+    );
     saveQueueRef.current = task;
     try {
       await task;
-      if (cloudUserRef.current?.id !== latestUser.id || syncKeyRef.current !== key) return;
+      if (cloudUserRef.current?.id !== latestUser.id || syncKeyRef.current !== key) return true;
       lastSavedSignatureRef.current = latestSignature;
       const current = stateRef.current;
       dirtyRef.current = !current || cloudSnapshotSignature(current, latestUser.id) !== latestSignature;
       setSyncError('');
       if (refreshPendingRef.current && !dirtyRef.current) refreshFromRemote();
+      return true;
     } catch (error) {
       if (cloudUserRef.current?.id === latestUser.id && syncKeyRef.current === key) {
         dirtyRef.current = true;
         setSyncError(error.message || 'No pudimos sincronizar este cambio.');
       }
+      return false;
     }
   }, [refreshFromRemote]);
 
@@ -168,6 +181,7 @@ export function AppStateProvider({ children }) {
     if (key !== syncKeyRef.current) {
       syncKeyRef.current = key;
       lastSavedSignatureRef.current = '';
+      savedMemoriesRef.current = { items: [] };
       dirtyRef.current = true;
     }
     const signature = cloudSnapshotSignature(state, cloudUser.id);
@@ -210,7 +224,9 @@ export function AppStateProvider({ children }) {
   }, [state?.mode, state?.experience?.id, cloudUser?.id, refreshFromRemote, persistCurrent]);
 
   const clearSyncError = useCallback(() => setSyncError(''), []);
-  const value = useMemo(() => ({ state, setState, update, updateMember, setCloudUser, hydrateCloudState, syncError, clearSyncError }), [state, setState, update, updateMember, setCloudUser, hydrateCloudState, syncError, clearSyncError]);
+  const value = useMemo(() => ({
+    state, setState, update, updateMember, setCloudUser, hydrateCloudState, persistCurrent, syncError, clearSyncError
+  }), [state, setState, update, updateMember, setCloudUser, hydrateCloudState, persistCurrent, syncError, clearSyncError]);
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
 }

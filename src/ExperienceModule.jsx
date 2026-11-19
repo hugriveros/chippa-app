@@ -10,6 +10,7 @@ import {
   sameQuestions, storyPrompts, triviaQuestions
 } from './data.js';
 import { labelDate, localDateValue } from './lib/format.js';
+import { useAppState } from './context/AppStateContext.jsx';
 import { createCloudFutureLetter, getExperiencePhotoUrl, loadCloudFutureLetters, setExperiencePhotoShared, uploadExperiencePhoto } from './lib/cloudStore.js';
 
 const memoryIcons = [
@@ -58,7 +59,7 @@ export default function ExperienceModule({ moduleId, state, update, updateMember
     {moduleId === 'missions' && <MissionsModule {...{ state, update, currentUser, onNavigate }} />}
     {moduleId === 'questions' && <QuestionBankModule {...{ state, updateMember, currentUser, currentMember, onToast }} />}
     {moduleId === 'passport' && <PassportModule {...{ state, currentUser, partner, completeActivity }} />}
-    {moduleId === 'capsule' && <CapsuleModule {...{ state, update, updateMember, currentUser, currentMember, partner, onToast }} />}
+    {moduleId === 'capsule' && <CapsuleModule {...{ state, update, currentUser, currentMember, partner, onToast }} />}
     {moduleId === 'future' && <FutureLetters {...{ state, updateMember, completeActivity, currentUser, currentMember, onToast }} />}
     {moduleId === 'playlist' && <PlaylistModule {...{ state, update, updateMember, currentUser, onToast }} />}
     {moduleId === 'plans' && <PlanGenerator {...{ state, update, updateMember, currentUser, partner, currentMember, onToast }} />}
@@ -248,19 +249,51 @@ function PassportModule({ state, currentUser, partner, completeActivity }) {
   const missionStamps = (state.shared?.stamps || []).filter((stamp) => stamp.startsWith('Misión:'));
   const places = [...new Set([...experiencePlaces, ...(state.shared?.stamps || []).filter((stamp) => !stamp.startsWith('Misión:'))])];
   const history = state.mode === 'demo' ? (state.experienceArchives || []).map((entry) => entry.experience) : (state.experienceOptions || []).filter((entry) => entry.id !== state.experience?.id);
-  return <div className="passport-layout"><Panel className="passport-cover"><div className="passport-cover-top"><span>CHIPPA</span><span>✦</span></div><div className="passport-globe">♡</div><div className="passport-cover-bottom"><small>PASAPORTE DE EXPERIENCIAS</small><b>{currentUser.name.toUpperCase()}</b><span>COLECCIONEN LUGARES.<br />COLECCIONEN MOMENTOS.</span></div><div className="passport-edge">✦</div></Panel><div className="passport-details"><Panel><div className="eyebrow">SU COLECCIÓN</div><h2>Un nuevo lugar para recordar.</h2><div className="passport-stats"><div><b>{places.length}</b><small>lugares</small></div><div><b>{Math.max(1, experiencePlaces.length)}</b><small>experiencias</small></div><div><b>{missionStamps.length}</b><small>misiones</small></div></div><button className="secondary-button full-button" disabled={!state.experience?.place || !state.experience?.date} onClick={completeActivity}>Sellar esta visita con CHIPPA</button><div className="passport-note">Las estampillas registran experiencias anotadas por ustedes. No verifican la visita presencial.</div></Panel><Panel><div className="eyebrow">ESTAMPILLAS DIGITALES</div><div className="stamp-grid">{places.map((stamp, index) => <div className={`stamp stamp-${index % 5}`} key={stamp}><span>{['📍','🌳','🌸','🛍️','🌆'][index % 5]}</span><b>{stamp}</b><small>REGISTRADO</small></div>)}{missionStamps.map((stamp, index) => <div className={`stamp stamp-${(index + 2) % 5}`} key={stamp}><span>⭐</span><b>{stamp.replace('Misión: ', '')}</b><small>MISIÓN</small></div>)}{!places.length && !missionStamps.length && <p>Aún no hay estampillas. Registren una experiencia para obtener la primera.</p>}</div></Panel><Panel><div className="eyebrow">ESTE CAPÍTULO</div><div className="passport-entry"><span>{experienceMark(state.experience?.emoji)}</span><div><b>{state.experience?.title}</b><small>{state.experience?.place} · {labelDate(state.experience?.date)}</small></div><span><Avatar value={currentUser.avatar} /> + <Avatar value={partner?.avatar} /></span></div>{history.length > 0 && <div className="history-block"><div className="eyebrow">OTRAS EXPERIENCIAS</div>{history.map((entry) => <div className="passport-entry history-passport-entry" key={entry.id}><span>{experienceMark(entry.emoji)}</span><div><b>{entry.title}</b><small>{entry.place} · {labelDate(entry.date)}</small></div></div>)}</div>}</Panel></div></div>;
+  return <div className="passport-layout"><figure className="passport-cover">
+    <div className="passport-art"><img src="/assets/chippa/pasaporte.png" alt="Portada del pasaporte Chippa" /></div>
+    <figcaption>{currentUser.name}</figcaption>
+  </figure><div className="passport-details"><Panel><div className="eyebrow">SU COLECCIÓN</div><h2>Un nuevo lugar para recordar.</h2><div className="passport-stats"><div><b>{places.length}</b><small>lugares</small></div><div><b>{Math.max(1, experiencePlaces.length)}</b><small>experiencias</small></div><div><b>{missionStamps.length}</b><small>misiones</small></div></div><button className="secondary-button full-button" disabled={!state.experience?.place || !state.experience?.date} onClick={completeActivity}>Sellar esta visita con CHIPPA</button><div className="passport-note">Las estampillas registran experiencias anotadas por ustedes. No verifican la visita presencial.</div></Panel><Panel><div className="eyebrow">ESTAMPILLAS DIGITALES</div><div className="stamp-grid">{places.map((stamp, index) => <div className={`stamp stamp-${index % 5}`} key={stamp}><span>{['📍','🌳','🌸','🛍️','🌆'][index % 5]}</span><b>{stamp}</b><small>REGISTRADO</small></div>)}{missionStamps.map((stamp, index) => <div className={`stamp stamp-${(index + 2) % 5}`} key={stamp}><span>⭐</span><b>{stamp.replace('Misión: ', '')}</b><small>MISIÓN</small></div>)}{!places.length && !missionStamps.length && <p>Aún no hay estampillas. Registren una experiencia para obtener la primera.</p>}</div></Panel><Panel><div className="eyebrow">ESTE CAPÍTULO</div><div className="passport-entry"><span>{experienceMark(state.experience?.emoji)}</span><div><b>{state.experience?.title}</b><small>{state.experience?.place} · {labelDate(state.experience?.date)}</small></div><span><Avatar value={currentUser.avatar} /> + <Avatar value={partner?.avatar} /></span></div>{history.length > 0 && <div className="history-block"><div className="eyebrow">OTRAS EXPERIENCIAS</div>{history.map((entry) => <div className="passport-entry history-passport-entry" key={entry.id}><span>{experienceMark(entry.emoji)}</span><div><b>{entry.title}</b><small>{entry.place} · {labelDate(entry.date)}</small></div></div>)}</div>}</Panel></div></div>;
 }
 
-function CapsuleModule({ state, update, updateMember, currentUser, currentMember, partner, onToast }) {
+function CapsuleModule({ state, update, currentUser, currentMember, partner, onToast }) {
+  const { persistCurrent } = useAppState();
   const [text, setText] = useState('');
   const [shared, setShared] = useState(true);
   const [photo, setPhoto] = useState(null);
   const [layout, setLayout] = useState('scrapbook');
   const [saving, setSaving] = useState(false);
+  const fileInput = useRef(null);
   const sharedMemories = state.shared?.memories || [];
   const ownPrivate = (currentMember.memories || []).filter((item) => !item.shared);
+  const memoryCount = sharedMemories.length + ownPrivate.length;
+
+  useEffect(() => {
+    if (!photo?.data || !photo.file) return undefined;
+    return () => URL.revokeObjectURL(photo.data);
+  }, [photo]);
+
+  const updateMemories = (isPrivate, updater) => {
+    let applied = false;
+    update((previous) => {
+      if (previous?.experience?.id !== state.experience.id || previous.activeUserId !== state.activeUserId) return previous;
+      applied = true;
+      if (!isPrivate) {
+        return { ...previous, shared: { ...previous.shared, memories: updater(previous.shared?.memories || []) } };
+      }
+      const member = previous.memberData?.[currentUser.id] || {};
+      return {
+        ...previous,
+        memberData: {
+          ...previous.memberData,
+          [currentUser.id]: { ...member, memories: updater(member.memories || []) }
+        }
+      };
+    });
+    return applied;
+  };
+
   const add = async () => {
-    if (!text.trim() && !photo) { onToast('Agrega una frase o una foto para guardar.'); return; }
+    if (saving || (!text.trim() && !photo)) return;
     setSaving(true);
     try {
       let photoData = photo;
@@ -271,23 +304,82 @@ function CapsuleModule({ state, update, updateMember, currentUser, currentMember
       }
       if (state.mode === 'cloud' && shared && photoData?.path) await setExperiencePhotoShared(photoData.path, true);
       const memory = { id: newId(), ownerId: currentUser.id, ownerName: currentUser.name, ownerAvatar: currentUser.avatar, type: photoData ? 'photo' : 'note', text: text.trim(), photo: photoData, shared, createdAt: new Date().toISOString() };
-      if (shared) update((previous) => ({ ...previous, shared: { ...previous.shared, memories: [memory, ...(previous.shared?.memories || [])] } }));
-      else patchRecord((fn) => updateMember(fn), 'memories', (old = []) => [memory, ...old]);
-      setText(''); setPhoto(null); onToast(shared ? 'Recuerdo agregado a la cápsula compartida.' : 'Recuerdo guardado en tu espacio privado.');
+      const applied = updateMemories(!shared, (memories) => [memory, ...memories]);
+      if (!applied) throw new Error('La salida cambió antes de guardar el recuerdo. Vuelve a abrirla para intentarlo.');
+      const persisted = state.mode !== 'cloud' || await persistCurrent();
+      setText('');
+      setPhoto(null);
+      if (fileInput.current) fileInput.current.value = '';
+      if (persisted) onToast(shared ? 'Recuerdo agregado a la cápsula.' : 'Recuerdo guardado en tu espacio privado.');
     } catch (error) { onToast(error.message || 'No pudimos agregar el recuerdo.'); }
     finally { setSaving(false); }
   };
-  const remove = (memory, isPrivate) => {
+  const remove = async (memory, isPrivate) => {
     if (memory.ownerId !== currentUser.id) { onToast('Solo quien agregó un recuerdo puede eliminarlo.'); return; }
     if (!window.confirm('¿Eliminar este recuerdo? Esta acción no se puede deshacer.')) return;
+    const applied = updateMemories(isPrivate, (memories) => memories.filter((entry) => entry.id !== memory.id));
+    if (!applied || (state.mode === 'cloud' && !await persistCurrent())) return;
     if (state.mode === 'cloud' && memory.photo?.path) setExperiencePhotoShared(memory.photo.path, false).catch(() => {});
-    if (isPrivate) patchRecord((fn) => updateMember(fn), 'memories', (old = []) => old.filter((entry) => entry.id !== memory.id));
-    else update((previous) => ({ ...previous, shared: { ...previous.shared, memories: previous.shared.memories.filter((entry) => entry.id !== memory.id) } }));
     onToast('Recuerdo eliminado.');
   };
   const download = (memory) => { const content = JSON.stringify({ title: 'Recuerdo Chippa', text: memory.text, createdAt: memory.createdAt }, null, 2); const url = URL.createObjectURL(new Blob([content], { type: 'application/json' })); const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'recuerdo-chippa.json'; anchor.click(); URL.revokeObjectURL(url); };
-  const renderMemory = (memory, isPrivate) => <article key={memory.id} className={`capsule-memory ${layout === 'polaroids' ? 'polaroid-memory' : ''}`}><div className="memory-decor">{memory.type === 'photo' ? '📸' : ['✦','♡','✿'][memory.id.length % 3]}</div><Photo item={memory.photo} />{memory.text && <p>{memory.text}</p>}<div className="memory-byline"><span><Avatar value={memory.ownerAvatar} /> {memory.ownerName}</span><small>{new Date(memory.createdAt).toLocaleDateString('es-CL')}</small></div><div className="memory-actions">{isPrivate && <i>🔒 Privado</i>}{memory.ownerId === currentUser.id && <><button onClick={() => download(memory)} aria-label="Descargar recuerdo">↓ Descargar</button><button onClick={() => remove(memory, isPrivate)} aria-label="Eliminar recuerdo">Eliminar</button></>}</div></article>;
-  return <div className="capsule-page"><Panel className="capsule-intro"><div><div className="eyebrow">{partner ? 'UN ÁLBUM PARA USTEDES' : 'TU ÁLBUM CHIPPA'}</div><h2>Los mejores momentos merecen quedarse.</h2><p>{partner ? 'Guarda lo que quieran recordar. Cada elemento puede quedarse privado o pasar a la cápsula compartida.' : 'Guarda los momentos que quieras recordar en tu cápsula personal.'}</p></div><div className="capsule-doodle"><img src="/assets/chippa/marco-polaroid-vintage.png" alt="" /><span>♡</span></div></Panel><Panel className="capsule-composer"><div className="composer-sticker">✦</div><div className="eyebrow">AGREGAR UN RECUERDO</div><textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Una frase, una respuesta o un detalle que quieran guardar…" rows="3" /><div className="composer-bottom"><label className="file-pick compact-file">＋ Foto<input type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] ? { file: e.target.files[0], data: URL.createObjectURL(e.target.files[0]) } : null)} /><small>opcional</small></label>{photo && <img className="composer-preview" src={photo.data} alt="Vista previa" />}<ShareToggle checked={shared} onChange={setShared} label={partner ? 'Compartir con mi acompañante' : 'Incluir en mi cápsula'} /><button className="primary-button" onClick={add} disabled={saving}>{saving ? 'Guardando…' : 'Guardar en la cápsula →'}</button></div></Panel><div className="capsule-toolbar"><div><div className="eyebrow">SU HISTORIA GUARDADA</div><h3>{sharedMemories.length + ownPrivate.length} recuerdos</h3></div><div className="layout-switch"><button className={layout === 'scrapbook' ? 'active' : ''} onClick={() => setLayout('scrapbook')}>Scrapbook</button><button className={layout === 'polaroids' ? 'active' : ''} onClick={() => setLayout('polaroids')}>Polaroids</button></div></div><div className={`capsule-grid ${layout}`}>{[...sharedMemories.map((item) => renderMemory(item, false)), ...ownPrivate.map((item) => renderMemory(item, true))]}</div>{!sharedMemories.length && !ownPrivate.length && <div className="empty-proposal"><span>📸</span><h3>{partner ? 'Su álbum está esperando la primera página.' : 'Tu cápsula está esperando la primera página.'}</h3><p>{partner ? 'Agreguen una frase, respuesta o foto que quieran guardar.' : 'Agrega una frase, respuesta o foto que quieras guardar.'}</p></div>}</div>;
+  const renderMemory = (memory, isPrivate) => (
+    <article key={memory.id} className={`capsule-memory ${layout === 'polaroids' ? 'polaroid-memory' : ''}`}>
+      <Photo item={memory.photo} alt={memory.ownerName ? `Foto de ${memory.ownerName}` : 'Foto del recuerdo'} />
+      {memory.text && <p>{memory.text}</p>}
+      <div className="memory-byline">
+        <span><Avatar value={memory.ownerAvatar} /> {memory.ownerName}</span>
+        <time dateTime={memory.createdAt}>{new Date(memory.createdAt).toLocaleDateString('es-CL')}</time>
+      </div>
+      <div className="memory-actions">
+        {isPrivate && <i>🔒 Privado</i>}
+        {memory.ownerId === currentUser.id && <>
+          <button type="button" onClick={() => download(memory)}>↓ Descargar</button>
+          <button type="button" onClick={() => remove(memory, isPrivate)}>Eliminar</button>
+        </>}
+      </div>
+    </article>
+  );
+
+  return <div className="capsule-page">
+    <Panel className="capsule-intro">
+      <div>
+        <div className="eyebrow">{state.experience.title}</div>
+        <h2>{partner ? 'Álbum compartido' : 'Tu álbum de la salida'}</h2>
+        <p>{partner ? `Tú y ${partner.name} pueden agregar fotos y notas. Cada persona elige cuáles compartir.` : 'Guarda fotos y notas de esta salida.'}</p>
+      </div>
+      <div className="capsule-doodle"><img src="/assets/chippa/marco-polaroid-vintage.png" alt="" /><span aria-hidden="true">♡</span></div>
+    </Panel>
+    <Panel className="capsule-composer">
+      <form onSubmit={(event) => { event.preventDefault(); add(); }}>
+        <label className="eyebrow" htmlFor="capsule-text">AGREGAR UN RECUERDO</label>
+        <textarea id="capsule-text" value={text} onChange={(event) => setText(event.target.value)} placeholder="Escribe una nota o agrega una foto…" rows="3" />
+        <div className="composer-bottom">
+          <label className="file-pick compact-file">＋ Foto
+            <input ref={fileInput} type="file" accept="image/*" onChange={(event) => {
+              const file = event.target.files?.[0];
+              setPhoto(file ? { file, data: URL.createObjectURL(file) } : null);
+            }} />
+            <small>opcional</small>
+          </label>
+          {photo && <img className="composer-preview" src={photo.data} alt="Vista previa" />}
+          <ShareToggle checked={shared} onChange={setShared} label={partner ? `Compartir con ${partner.name}` : 'Incluir en mi cápsula'} />
+          <button className="primary-button" disabled={saving || (!text.trim() && !photo)}>{saving ? 'Guardando…' : 'Guardar en la cápsula →'}</button>
+        </div>
+      </form>
+    </Panel>
+    <div className="capsule-toolbar">
+      <h3>{memoryCount} {memoryCount === 1 ? 'recuerdo' : 'recuerdos'}</h3>
+      <div className="layout-switch" role="group" aria-label="Formato de la galería">
+        <button type="button" className={layout === 'scrapbook' ? 'active' : ''} aria-pressed={layout === 'scrapbook'} onClick={() => setLayout('scrapbook')}>Scrapbook</button>
+        <button type="button" className={layout === 'polaroids' ? 'active' : ''} aria-pressed={layout === 'polaroids'} onClick={() => setLayout('polaroids')}>Polaroids</button>
+      </div>
+    </div>
+    {memoryCount ? <div className="capsule-grid">
+      {sharedMemories.map((item) => renderMemory(item, false))}
+      {ownPrivate.map((item) => renderMemory(item, true))}
+    </div> : <div className="empty-proposal"><span aria-hidden="true">📸</span><h3>La cápsula todavía está vacía.</h3><p>Agrega una foto o una nota para empezar.</p></div>}
+  </div>;
 }
 
 function FutureLetters({ state, updateMember, completeActivity, currentUser, currentMember, onToast }) {
