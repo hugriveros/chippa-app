@@ -683,7 +683,7 @@ function OutingActivities({ premiumActive, state, onOpen, onPage }) {
 
 function OutingsPage({ outings, activeId, openingExperienceId, onCreate, onSelect }) {
   return <main className="content outings-page">
-    <header className="outings-heading"><div><div className="eyebrow">TU COLECCIÓN CHIPPA</div><h1>Mis salidas.</h1><p>Todos tus planes y encuentros, en un solo lugar. Cada salida puede ser solo para ti o incluir a un amigo.</p></div><button className="primary-button" onClick={onCreate}>＋ Planear una salida</button></header>
+    <header className="outings-heading"><div><div className="eyebrow">TU COLECCIÓN CHIPPA</div><h1>Mis salidas.</h1><p>Todos tus planes y encuentros, en un solo lugar. Cada salida puede ser solo para ti o incluir a un amigo.</p></div><button className="primary-button" onClick={onCreate}>＋ Crear salida</button></header>
     <div className="outings-list-heading"><div><div className="eyebrow">LÍNEA DE TIEMPO</div><h2>{outings.length} {outings.length === 1 ? 'salida' : 'salidas'}</h2></div><span>Ordenadas de la más reciente a la más antigua</span></div>
     {!outings.length ? <EmptyFriends title="Todavía no tienes salidas." text="Crea un plan para ti. Invitar a otra persona es opcional y puedes hacerlo más adelante." action="Crear mi primera salida" onClick={onCreate} /> : <div className="outings-list">
       {outings.map((outing, index) => {
