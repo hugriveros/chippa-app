@@ -50,7 +50,7 @@ export default function GamesHub({ state, onOpen, onBack, backLabel = 'Volver al
   const games = modules.filter((item) => item.group === 'Juegos');
   const shown = games.filter((item) => filter === 'Todos' || (filter === 'Free' ? !item.premium : item.premium));
   return <main className="content games-hub"><button className="back-link" onClick={onBack}>← {backLabel}</button>
-    <section className="games-intro"><div><div className="eyebrow">UN RATITO PARA USTEDES</div><h1>Jugar también es<br />crear recuerdos.</h1><p>Una pregunta, una coincidencia, una pequeña sorpresa. Elijan cómo seguir su historia.</p><span className="games-intro-note">✦ Sin prisa. A su ritmo.</span></div><div className="games-intro-art" aria-hidden="true">🎲<span>♡</span><i>✦</i></div></section>
+    <section className="games-intro"><div><div className="eyebrow">{state.experience.title}</div><h1>Juegos de la salida</h1></div><div className="games-intro-art" aria-hidden="true">🎲<span>♡</span><i>✦</i></div></section>
     <div className="games-toolbar"><div role="group" aria-label="Filtrar juegos">{['Todos', 'Free', 'Premium'].map((label) => <button key={label} aria-pressed={filter === label} className={filter === label ? 'selected' : ''} onClick={() => setFilter(label)}>{label === 'Premium' && <LockIcon />}{label}</button>)}</div><span>{shown.length} juegos para descubrir</span></div>
     <div className="games-library">{shown.map((item) => <ActivityCard premiumActive={premiumActive} key={item.id} item={item} state={state} onOpen={onOpen} />)}</div>
   </main>;

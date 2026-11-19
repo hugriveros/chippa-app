@@ -22,6 +22,15 @@ import { activityStatus, completionRecord, loadSimulatedPremium, premiumKey } fr
 const groupOrder = ['Revive la cita', 'Juegos', 'Cartas', 'Aventuras', 'Conózcanse', 'Guarden recuerdos'];
 const emptyMember = () => ({ moment: {}, same: {}, stories: {}, trivia: {}, letters: [], questions: [], future: [], preferences: {}, votes: {} });
 const CHISPOSITA_CIRCLE_ICON = '/assets/chippa/chisposita-circulo.png';
+const navigationItems = [
+  { target: 'dashboard', label: 'Inicio', icon: 'home' },
+  { target: 'outings', label: 'Salidas', icon: 'outings' },
+  { target: 'friends', label: 'Amigos', icon: 'friends' },
+  { target: 'capsule', label: 'Cápsulas', icon: 'capsule' },
+  { target: 'passport', label: 'Pasaporte', icon: 'passport' }
+];
+const outingPages = ['outing-detail', 'games', 'module', 'results'];
+const capsuleIsPremium = modules.some((item) => item.id === 'capsule' && item.premium);
 
 function ExperienceMark({ value, fallback = '💫' }) {
   const mark = value || fallback;
@@ -373,7 +382,7 @@ function App() {
     if (['games', 'results', 'capsule', 'passport'].includes(next)) {
       setActivityReturnPage(page === 'outing-detail' ? 'outing-detail' : 'dashboard');
     }
-    if (!premiumActive && next === 'capsule' && modules.some((item) => item.id === 'capsule' && item.premium)) { showPremiumNotice(); return; }
+    if (!premiumActive && next === 'capsule' && capsuleIsPremium) { showPremiumNotice(); return; }
     setPage(next); setProfileMenu(false);
   };
   const openModule = (id) => {
@@ -385,6 +394,16 @@ function App() {
     setModuleId(id); setPage('module');
   };
   const backFromActivity = () => setPage(activityReturnPage);
+  const exploreFreeActivities = () => {
+    setPremiumItem(null);
+    if (!state.experience?.id || !outingPages.includes(page)) {
+      changePage('outings');
+      return;
+    }
+    setActivityReturnPage('outing-detail');
+    setGamesFilter('Free');
+    setPage('games');
+  };
 
   if (!authReady) return <div className="loading-screen"><span className="spinner" /> Preparando tu pasaporte…</div>;
   if (!supabaseConfigured && import.meta.env.PROD) return <LaunchSetupPage onLegal={setLegalDocument} legalDocument={legalDocument} />;
@@ -394,9 +413,13 @@ function App() {
   if (!state || !currentUser) return <><Welcome onStart={() => setPage('auth')} onLocalPreview={localPreview ? startLocalPreview : undefined} onLogin={() => { setAuthMode('login'); setPage('auth'); }} onLegal={setLegalDocument} cloud={supabaseConfigured} /><LegalPolicies document={legalDocument} onClose={() => setLegalDocument(null)} /></>;
 
   const pendingFriendRequests = social.ownerId === currentUser.id ? (social.requests || []).filter((request) => request.recipientId === currentUser.id && request.status === 'pending').length : 0;
+  const navigationSection = page === 'module' && activityReturnPage !== 'outing-detail' && moduleId === 'capsule'
+    ? 'capsule'
+    : outingPages.includes(page) ? 'outings' : page;
+  const navigationProps = { activeSection: navigationSection, premiumActive, setPage: changePage, friendRequestCount: pendingFriendRequests };
 
   return <div className="app-shell">
-    <Sidebar premiumActive={premiumActive} page={page} moduleId={moduleId} setPage={changePage} openModule={openModule} friendRequestCount={pendingFriendRequests} />
+    <Sidebar {...navigationProps} />
     <div className="app-main">
       <header className="topbar">
         <button className="mobile-brand" onClick={() => setPage('dashboard')} aria-label="Ir al inicio de Chippa"><img src="/assets/chippa/brand.png" alt="CHIPPA" /></button>
@@ -414,7 +437,7 @@ function App() {
       {state.mode === 'demo' && import.meta.env.DEV && <div className="local-storage-notice"><span>ⓘ</span> Los cambios de esta vista se guardan en este dispositivo.</div>}
       {page === 'friends' && <FriendsPage key={`${currentUser.id}:${friendsVersion}`} person={currentUser} state={state} social={social.ownerId === currentUser.id ? social : { connections: [], requests: [], meetings: [] }} loading={friendsLoading} error={friendsError} onRefresh={() => refreshFriends().catch(() => {})} onNewMeeting={newMeetingWith} onOpenMeeting={selectExperience} onToast={notify} />}
       {page === 'outings' && <OutingsPage outings={outingEntries} activeId={state.experience?.id} openingExperienceId={openingExperienceId} onCreate={openNewOuting} onSelect={selectExperience} />}
-      {page === 'dashboard' && <Dashboard premiumActive={premiumActive} state={state} currentUser={currentUser} partner={partner} outings={outingEntries} openingExperienceId={openingExperienceId} onSelectOuting={selectExperience} onOpen={openModule} onPage={changePage} onCreate={openNewOuting} />}
+      {page === 'dashboard' && <Dashboard state={state} currentUser={currentUser} partner={partner} outings={outingEntries} openingExperienceId={openingExperienceId} onSelectOuting={selectExperience} onPage={changePage} onCreate={openNewOuting} />}
       {page === 'outing-detail' && state.experience?.id && <OutingDetail key={state.experience.id} premiumActive={premiumActive} state={state} onBack={() => changePage('outings')} onOpen={openModule} onPage={changePage} />}
       {page === 'games' && <GamesHub premiumActive={premiumActive} key={gamesFilter} initialFilter={gamesFilter} state={state} onOpen={openModule} onBack={backFromActivity} backLabel={activityReturnPage === 'outing-detail' ? 'Volver a la salida' : undefined} />}
       {page === 'module' && <ExperienceModule
@@ -425,12 +448,12 @@ function App() {
       {page === 'capsule' && <ExperienceModule moduleId="capsule" state={state} update={update} updateMember={updateMember} currentUser={currentUser} partner={partner} currentMember={currentMember} onBack={backFromActivity} onToast={notify} />}
       {page === 'passport' && <ExperienceModule moduleId="passport" state={state} update={update} updateMember={updateMember} currentUser={currentUser} partner={partner} currentMember={currentMember} onBack={backFromActivity} onToast={notify} />}
       {showExperienceForm && <ExperienceForm friend={meetingFriend} friends={social.connections || []} onClose={() => { setShowExperienceForm(false); setMeetingFriend(null); }} onSubmit={createExperience} busy={busy} />}
-      <MobileNav premiumActive={premiumActive} page={page} setPage={changePage} openGames={() => changePage('games')} friendRequestCount={pendingFriendRequests} />
+      <nav className="mobile-nav" aria-label="Navegación principal"><NavigationButtons {...navigationProps} mobile /></nav>
       <LegalFooter className="app-legal-footer" onOpen={setLegalDocument} />
     </div>
     {toast && <div className="toast" role="status">{toast}</div>}
     <LegalPolicies document={legalDocument} onClose={() => setLegalDocument(null)} />
-    <PremiumCheckout active={premiumActive} onActivate={activatePremium} onCancel={cancelPremium} item={premiumItem} onClose={() => setPremiumItem(null)} onFree={() => { setPremiumItem(null); setGamesFilter('Free'); setPage('games'); }} />
+    <PremiumCheckout active={premiumActive} onActivate={activatePremium} onCancel={cancelPremium} item={premiumItem} onClose={() => setPremiumItem(null)} onFree={exploreFreeActivities} />
   </div>;
 }
 
@@ -506,41 +529,42 @@ function AuthPage({ mode, setMode, onSubmit, onBack, onLegal, busy, cloud }) {
   </section><LegalFooter className="auth-legal-footer" onOpen={onLegal} /></main>;
 }
 
-function Sidebar({ premiumActive, page, moduleId, setPage, openModule, friendRequestCount = 0 }) {
-  const quick = [ ['moment', 'Nuestra cita', 'moment'], ['same', 'Juegos', 'games'], ['letters', 'Cartas', 'letters'], ['next', 'Aventuras', 'adventures'] ];
-  return <aside className="sidebar"><button className="sidebar-brand" onClick={() => setPage('dashboard')} aria-label="Ir al inicio de Chippa"><Brand /></button>
-    <div className="side-label">LA HISTORIA</div><button className={`side-link ${page === 'dashboard' ? 'active' : ''}`} onClick={() => setPage('dashboard')}><SidebarIcon name="home" /> Inicio</button>
-    <button className={`side-link ${page === 'outings' || page === 'outing-detail' ? 'active' : ''}`} onClick={() => setPage('outings')}><SidebarIcon name="outings" /> Salidas</button>
-    <button className={`side-link ${page === 'friends' ? 'active' : ''}`} onClick={() => setPage('friends')}><SidebarIcon name="friends" /> Amigos{friendRequestCount > 0 && <i className="friend-nav-badge" aria-label={`${friendRequestCount} solicitudes pendientes`}>{friendRequestCount}</i>}</button>
-    <div className="side-label spaced">EXPLORAR</div>{quick.map(([id, title, emoji]) => {
-      const premium = !premiumActive && id !== 'same' && modules.some((item) => item.id === id && item.premium);
-      const active = id === 'same' ? page === 'games' || page === 'module' && ['same','story','memory','missions','trivia'].includes(moduleId) : page === 'module' && moduleId === id;
-      return <button className={`side-link ${active ? 'active' : ''} ${premium ? 'premium-menu-link' : ''}`} key={id} onClick={() => id === 'same' ? setPage('games') : openModule(id)} title={premium ? 'Contenido Premium bloqueado' : undefined}><SidebarIcon name={emoji} />{title}{premium ? <span className="side-premium-lock" role="img" aria-label="Premium bloqueado"><PremiumLockIcon /></span> : <i>→</i>}</button>;
-    })}
-    <div className="side-label spaced">SU RECUERDO</div><button className={`side-link ${page === 'results' ? 'active' : ''}`} onClick={() => setPage('results')}><SidebarIcon name="results" /> Sus respuestas</button><button className={`side-link ${premiumActive ? '' : 'premium-menu-link'} ${page === 'capsule' || page === 'module' && moduleId === 'capsule' ? 'active' : ''}`} onClick={() => setPage('capsule')} title="Contenido Premium bloqueado"><SidebarIcon name="capsule" /> Cápsula{!premiumActive && <span className="side-premium-lock" role="img" aria-label="Premium bloqueado"><PremiumLockIcon /></span>}</button><button className={`side-link ${page === 'passport' || page === 'module' && moduleId === 'passport' ? 'active' : ''}`} onClick={() => setPage('passport')}><SidebarIcon name="passport" /> Pasaporte</button>
+function Sidebar(props) {
+  return <aside className="sidebar">
+    <button type="button" className="sidebar-brand" onClick={() => props.setPage('dashboard')} aria-label="Ir al inicio de Chippa"><Brand /></button>
+    <nav className="sidebar-links" aria-label="Navegación principal"><NavigationButtons {...props} /></nav>
     <div className="sidebar-bottom"><div className="sidebar-sticker">✦ <span>coleccionen<br />momentos</span> ♡</div><div className="sidebar-foot">Hecho para guardar historias</div></div>
   </aside>;
 }
 
-function MobileNav({ premiumActive, page, setPage, openGames, friendRequestCount = 0 }) {
-  const items = [
-    ['dashboard', 'home', 'Inicio', null], ['games', 'games', 'Juegos', null], ['friends', 'friends', 'Amigos', null], ['capsule', 'capsule', 'C\u00e1psula', 'capsule'], ['passport', 'passport', 'Pasaporte', null]
-  ];
-  return <nav className="mobile-nav" aria-label="Navegación principal">{items.map(([target, icon, label, premiumId]) => {
-    const premium = !premiumActive && Boolean(premiumId && modules.some((item) => item.id === premiumId && item.premium));
-    return <button key={target} className={`${page === target ? 'active' : ''} ${premium ? 'premium-nav-link' : ''}`} onClick={() => target === 'games' ? openGames() : setPage(target)} aria-disabled={premium || undefined} title={premium ? 'Contenido Premium bloqueado' : undefined}><SidebarIcon name={icon} />{label}{target === 'friends' && friendRequestCount > 0 && <i className="friend-nav-badge" aria-label={`${friendRequestCount} solicitudes pendientes`}>{friendRequestCount}</i>}{premium && <i className="mobile-premium-lock"><PremiumLockIcon /></i>}</button>;
-  })}</nav>;
+function NavigationButtons({ activeSection, premiumActive, setPage, friendRequestCount, mobile = false }) {
+  return navigationItems.map(({ target, icon, label }) => {
+    const active = activeSection === target;
+    const locked = target === 'capsule' && capsuleIsPremium && !premiumActive;
+    return <button
+      type="button"
+      key={target}
+      className={[!mobile && 'side-link', active && 'active'].filter(Boolean).join(' ')}
+      onClick={() => setPage(target)}
+      aria-current={active ? 'page' : undefined}
+      title={locked ? 'Contenido Premium bloqueado' : undefined}
+    >
+      <SidebarIcon name={icon} />
+      {label}
+      {target === 'friends' && friendRequestCount > 0 && <i className="friend-nav-badge" aria-label={`${friendRequestCount} solicitudes pendientes`}>{friendRequestCount}</i>}
+      {locked && <span className={mobile ? 'mobile-premium-lock' : 'side-premium-lock'} role="img" aria-label="Premium"><PremiumLockIcon /></span>}
+    </button>;
+  });
 }
 
-function Dashboard({ premiumActive, state, currentUser, partner, outings = [], openingExperienceId, onSelectOuting, onOpen, onPage, onCreate }) {
+function Dashboard({ state, currentUser, partner, outings = [], openingExperienceId, onSelectOuting, onPage, onCreate }) {
   const hasActiveOuting = Boolean(state.experience?.id);
-  const quickAccess = [
-    { title: 'Amigos', detail: 'Conecta y organiza algo juntos', icon: 'friends', target: 'friends', enabled: true },
-    { title: 'Juegos', detail: 'Retos para compartir', icon: 'games', target: 'games', enabled: hasActiveOuting },
-    { title: 'Nuestra cita', detail: 'Vuelve a tus momentos', icon: 'moment', target: 'moment', enabled: hasActiveOuting },
-    { title: 'Respuestas', detail: 'Revisa lo que guardaste', icon: 'results', target: 'results', enabled: hasActiveOuting },
-    { title: 'Pasaporte', detail: 'Mira tus recuerdos CHIPPA', icon: 'passport', target: 'passport', enabled: hasActiveOuting }
-  ];
+  const quickDetails = {
+    outings: 'Abre tus planes guardados',
+    friends: 'Conecta y organiza algo juntos',
+    capsule: 'Guarda recuerdos',
+    passport: 'Mira tu colección CHIPPA'
+  };
   return <main className="content dashboard-content">
     <section className="home-outings-dashboard" aria-labelledby="home-outings-title">
       <header className="home-outings-heading">
@@ -560,9 +584,13 @@ function Dashboard({ premiumActive, state, currentUser, partner, outings = [], o
         </section>
         <section className="home-quick-panel" aria-labelledby="home-quick-title">
           <div className="home-panel-heading"><div><span className="home-panel-spark">✦</span><div><h2 id="home-quick-title">Accesos r&aacute;pidos</h2><p>Ve directo a una secci&oacute;n</p></div></div></div>
-          <div className="home-quick-grid">{quickAccess.map((item, index) => <button className={`home-quick-link quick-tone-${index % 5}`} key={item.target} disabled={!item.enabled} title={!item.enabled ? 'Crea una salida para empezar' : undefined} onClick={() => item.target === 'moment' ? onOpen('moment') : onPage(item.target)}>
-            <span className="home-quick-icon"><SidebarIcon name={item.icon} /></span><span className="home-quick-copy"><b>{item.title}</b><small>{item.enabled ? item.detail : 'Crea una salida para empezar'}</small></span><span className="home-quick-arrow" aria-hidden="true">↗</span>
-          </button>)}</div>
+          <div className="home-quick-grid">
+            {navigationItems.slice(1).map(({ target, icon, label }, index) => <button type="button" className={`home-quick-link quick-tone-${index}`} key={target} onClick={() => onPage(target)}>
+              <span className="home-quick-icon"><SidebarIcon name={icon} /></span>
+              <span className="home-quick-copy"><b>{label}</b><small>{quickDetails[target]}</small></span>
+              <span className="home-quick-arrow" aria-hidden="true">↗</span>
+            </button>)}
+          </div>
         </section>
       </div>
     </section>
@@ -574,14 +602,13 @@ function Dashboard({ premiumActive, state, currentUser, partner, outings = [], o
         <h1>{partner ? <>Nuestra aventura<br />continúa.</> : <>Tu salida,<br />tu historia.</>}</h1>
         <p>{partner ? 'La cita terminó, pero su historia todavía tiene páginas por llenar.' : 'Guarda tus planes y recuerdos. Puedes conectar con un amigo y crear una salida compartida cuando quieras.'}</p>
         <div className="hero-participants"><span className="participant-avatar"><Avatar value={currentUser.avatar} /></span>{partner && <span className="participant-avatar overlap"><Avatar value={partner.avatar} /></span>}<span>{partner ? `${currentUser.name} + ${partner.name}` : 'Solo tú, por ahora'}</span></div>
-        <button className="hero-small-button" onClick={() => onOpen('moment')}>Volver a ese momento <span>→</span></button>
+        <button className="hero-small-button" disabled={Boolean(openingExperienceId)} onClick={() => onSelectOuting(state.experience.id)}>Ver esta salida <span>→</span></button>
       </div>
       <div className="hero-polaroid"><div className="polaroid-image"><img className="polaroid-backdrop" src="/assets/chippa/collage-azul.jpg" alt="" /><img className="polaroid-character polaroid-character-twins" src="/assets/chippa/estrellas-gemelas-gafas-zapatillas.png" alt="Dos estrellas con gafas y zapatillas" /></div><div className="polaroid-under"><img className="polaroid-map-icon" src="/assets/chippa/mapa-pin.png" alt="" /><div><b>{state.experience?.title}</b><small> {state.experience?.place}</small></div></div><div className="polaroid-tape" /></div>
       <div className="hero-seal"><small>Un<br />recuerdo<br />más</small></div>
       <span className="hero-doodle doodle-one">✧</span><span className="hero-doodle doodle-two">♡</span>
     </section>
     <section className="experience-strip"><div className="experience-meta"><span className="meta-icon"><img src="/assets/chippa/map-icon.png" alt="" /></span><div><small>LUGAR DE LA SALIDA</small><b>{state.experience?.place || 'Lugar por agregar'}</b></div></div><div className="meta-divider" /><div className="experience-meta"><span className="meta-icon"><img src="/assets/chippa/calendar-check-transparent.png" alt="" /></span><div><small>FECHA</small><b>{labelDate(state.experience?.date)}</b></div></div><div className="meta-divider" /><div className="experience-meta"><span className="meta-icon"><img src="/assets/chippa/chat-bubble.png" alt="" /></span><div><small>{partner ? 'ACOMPAÑANTES' : 'PLAN PERSONAL'}</small><b>{partner ? 'Salida compartida' : 'Solo para ti'}</b></div></div><button className="strip-action" onClick={partner ? onCreate : () => onPage('friends')}>{partner ? 'Nueva salida →' : 'Conectar con un amigo →'}</button></section>
-    <OutingActivities premiumActive={premiumActive} state={state} onOpen={onOpen} onPage={onPage} showOutingsLink />
     </>}
   </main>;
 }
@@ -622,24 +649,23 @@ function OutingDetail({ premiumActive, state, onBack, onOpen, onPage }) {
   </main>;
 }
 
-function OutingActivities({ premiumActive, state, onOpen, onPage, showOutingsLink = false }) {
+function OutingActivities({ premiumActive, state, onOpen, onPage }) {
   const grouped = groupOrder.map((group) => ({ group, items: modules.filter((item) => item.group === group) })).filter((entry) => entry.items.length);
   const doneCount = modules.filter((item) => activityStatus(state, item.id)).length;
   return <>
     <section className="activity-section">
       <div className="section-heading">
-        <div>
-          {showOutingsLink && <div className="eyebrow">ELIGE POR DÓNDE SEGUIR</div>}
-          <h2>{showOutingsLink ? 'Hay muchas formas de continuar.' : 'Actividades de la salida'}</h2>
-        </div>
-        <div className="dashboard-action-links">
-          <button className="all-activities" onClick={() => onPage('results')}>Ver resultados <span>↗</span></button>
-          {showOutingsLink && <button className="all-activities outing-list-link" onClick={() => onPage('outings')}>Ver todas las salidas <span>→</span></button>}
-        </div>
+        <h2>Actividades de la salida</h2>
+        <button type="button" className="all-activities" onClick={() => onPage('results')}>Ver resultados <span aria-hidden="true">↗</span></button>
       </div>
       <div className="activity-groups">
         {grouped.map(({ group, items }, index) => <div className={`activity-group ${group === 'Juegos' ? 'activity-group-games' : ''}`} key={group}>
-          <div className="group-heading"><span className={`group-index index-${index}`}>0{index + 1}</span><h3>{group}</h3><i /></div>
+          <div className="group-heading">
+            <span className={`group-index index-${index}`}>0{index + 1}</span>
+            <h3>{group}</h3>
+            <i />
+            {group === 'Juegos' && <button type="button" className="all-activities" onClick={() => onPage('games')}>Ver todos los juegos <span aria-hidden="true">→</span></button>}
+          </div>
           <div className={`activity-grid ${items.length === 1 ? 'single-card' : ''}`}>
             {items.map((item) => <ActivityCard premiumActive={premiumActive} key={item.id} item={item} state={state} onOpen={onOpen} />)}
           </div>
