@@ -67,6 +67,7 @@ function App() {
   const [authReady, setAuthReady] = useState(!supabaseConfigured);
   const [authMode, setAuthMode] = useState('signup');
   const [busy, setBusy] = useState(false);
+  const [openingExperienceId, setOpeningExperienceId] = useState('');
   const [toast, setToast] = useState('');
   const [legalDocument, setLegalDocument] = useState(null);
   const [premiumItem, setPremiumItem] = useState(null);
@@ -298,21 +299,29 @@ function App() {
   };
 
   const selectExperience = async (experienceId) => {
+    if (!experienceId || openingExperienceId) return;
     setShowExperienceMenu(false);
     if (state.experience?.id === experienceId) { setPage('dashboard'); return; }
     if (state.mode === 'cloud') {
-      setBusy(true);
-      try { const selected = await loadCloudState(user, experienceId); if (selected) { hydrateCloudState(selected, user); setPage('dashboard'); } }
+      setOpeningExperienceId(experienceId);
+      try {
+        if (!user?.id) throw new Error('Inicia sesion nuevamente para abrir esta salida.');
+        const selected = await loadCloudState(user, experienceId);
+        if (selected?.experience?.id !== experienceId) throw new Error('No encontramos esa salida en tu cuenta. Actualiza la lista e intenta otra vez.');
+        hydrateCloudState(selected, user);
+        setPage('dashboard');
+      }
       catch (error) { notify(error.message || 'No pudimos abrir esa experiencia.'); }
-      finally { setBusy(false); }
+      finally { setOpeningExperienceId(''); }
       return;
     }
-    const selected = (state.experienceArchives || []).find((entry) => entry.experience.id === experienceId);
-    if (!selected) return;
-    const current = { experience: state.experience, memberData: state.memberData, shared: state.shared, participants: state.participants };
+    const selected = (state.experienceArchives || []).find((entry) => entry.experience?.id === experienceId);
+    if (!selected) { notify('No encontramos esa salida guardada. Actualiza la lista e intenta otra vez.'); return; }
     setState((previous) => {
-      const rest = previous.experienceArchives.filter((entry) => entry.experience.id !== experienceId);
-      const next = { ...previous, ...selected, participants: selected.participants || previous.participants, experienceArchives: [current, ...rest] };
+      const archives = previous.experienceArchives || [];
+      const previousOuting = previous.experience?.id ? { experience: previous.experience, memberData: previous.memberData, shared: previous.shared, participants: previous.participants } : null;
+      const rest = archives.filter((entry) => entry.experience?.id !== experienceId);
+      const next = { ...previous, ...selected, participants: selected.participants || previous.participants, experienceArchives: [...(previousOuting ? [previousOuting] : []), ...rest] };
       saveDemoState(next);
       return next;
     });
@@ -391,7 +400,7 @@ function App() {
       </header>
       {state.mode === 'demo' && import.meta.env.DEV && <div className="local-storage-notice"><span>ⓘ</span> Los cambios de esta vista se guardan en este dispositivo.</div>}
       {page === 'friends' && <FriendsPage key={`${currentUser.id}:${friendsVersion}`} person={currentUser} state={state} social={social.ownerId === currentUser.id ? social : { connections: [], requests: [], meetings: [] }} loading={friendsLoading} error={friendsError} onRefresh={() => refreshFriends().catch(() => {})} onNewMeeting={newMeetingWith} onOpenMeeting={selectExperience} onToast={notify} />}
-      {page === 'outings' && <OutingsPage outings={outingEntries} activeId={state.experience?.id} onCreate={openNewOuting} onSelect={selectExperience} />}
+      {page === 'outings' && <OutingsPage outings={outingEntries} activeId={state.experience?.id} openingExperienceId={openingExperienceId} onCreate={openNewOuting} onSelect={selectExperience} />}
       {page === 'dashboard' && <Dashboard premiumActive={premiumActive} state={state} currentUser={currentUser} partner={partner} outings={outingEntries} onSelectOuting={selectExperience} onOpen={openModule} onPage={changePage} onPremium={showPremiumNotice} onCreate={openNewOuting} />}
       {page === 'games' && <GamesHub premiumActive={premiumActive} key={gamesFilter} initialFilter={gamesFilter} state={state} onOpen={openModule} onBack={() => setPage('dashboard')} />}
       {page === 'module' && <ExperienceModule
@@ -568,19 +577,19 @@ function Dashboard({ premiumActive, state, currentUser, partner, outings = [], o
   </main>;
 }
 
-function OutingsPage({ outings, activeId, onCreate, onSelect }) {
+function OutingsPage({ outings, activeId, openingExperienceId, onCreate, onSelect }) {
   return <main className="content outings-page">
     <header className="outings-heading"><div><div className="eyebrow">TU COLECCIÓN CHIPPA</div><h1>Mis salidas.</h1><p>Todos tus planes y encuentros, en un solo lugar. Cada salida puede ser solo para ti o incluir a un amigo.</p></div><button className="primary-button" onClick={onCreate}>＋ Planear una salida</button></header>
     <div className="outings-list-heading"><div><div className="eyebrow">LÍNEA DE TIEMPO</div><h2>{outings.length} {outings.length === 1 ? 'salida' : 'salidas'}</h2></div><span>Ordenadas de la más reciente a la más antigua</span></div>
     {!outings.length ? <EmptyFriends title="Todavía no tienes salidas." text="Crea un plan para ti. Invitar a otra persona es opcional y puedes hacerlo más adelante." action="Crear mi primera salida" onClick={onCreate} /> : <div className="outings-list">
       {outings.map((outing, index) => {
         const active = outing.id === activeId;
-        return <button className={`outing-row ${active ? 'active' : ''}`} key={outing.id} onClick={() => onSelect(outing.id)} aria-current={active ? 'true' : undefined}>
+        return <button type="button" className={`outing-row ${active ? 'active' : ''}`} key={outing.id} onClick={() => onSelect(outing.id)} aria-current={active ? 'true' : undefined} aria-busy={openingExperienceId === outing.id || undefined} disabled={Boolean(openingExperienceId)}>
           <span className="outing-index">{String(index + 1).padStart(2, '0')}</span>
           <span className="outing-mark"><ExperienceMark value={outing.emoji} fallback="✦" /></span>
           <span className="outing-details"><small>{active ? 'SALIDA ACTUAL' : 'SALIDA GUARDADA'}</small><b>{outing.title}</b><span>{outing.place}</span></span>
           <time dateTime={outing.date}>{labelDate(outing.date)}</time>
-          <span className="outing-open">{active ? 'Abrir' : 'Ver salida'} <i>→</i></span>
+          <span className="outing-open">{openingExperienceId === outing.id ? 'Abriendo...' : active ? 'Abrir' : 'Ver salida'} <i>→</i></span>
         </button>;
       })}
     </div>}
