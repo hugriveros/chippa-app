@@ -554,12 +554,6 @@ textarea { resize: vertical; line-height: 1.7; }
 .hero-paper-kicker { top: 15px; padding: 7px 11px; background: #fff9e4; color: #a03d72; font-size: 8px; font-weight: 900; letter-spacing: .16em; }
 .hero-paper-tag { bottom: 11px; padding: 5px 9px; background: #d9eff2; color: #456576; font-size: 7px; font-weight: 900; letter-spacing: .13em; transform: translateX(-50%) rotate(2deg); }
 
-.dashboard-hero {
-  background-image: linear-gradient(100deg, rgba(255,247,249,.96) 0%, rgba(255,247,249,.89) 45%, rgba(255,247,249,.38) 100%), url('/assets/chippa/collage-rosa.jpg');
-  background-size: cover;
-  background-position: center 41%;
-  border-color: rgba(208,166,191,.54);
-}
 .polaroid-image { position: relative; background: #dcebf5; }
 .polaroid-image .polaroid-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
 .polaroid-image .polaroid-character { position: absolute; left: 50%; bottom: -4%; width: auto; height: 88%; max-width: 96%; object-fit: contain; object-position: center bottom; transform: translateX(-50%); filter: drop-shadow(0 3px 2px rgba(54,43,62,.18)); }
@@ -677,11 +671,10 @@ textarea { resize: vertical; line-height: 1.7; }
 .app-shell label { color: #493b52; font-size: 12px; }
 .app-shell input, .app-shell textarea, .app-shell select { min-height: 45px; color: #302338; font-size: 14px; }
 .app-shell .content > p, .app-shell .content .page-lede { color: #5f5265; font-size: 14px; line-height: 1.75; }
-.app-shell .dashboard-hero,
-.outings-page > .outings-heading {
-  border-color: #3d5274;
-  background: linear-gradient(105deg,rgba(12,20,37,.62),rgba(12,20,37,.42) 55%,rgba(12,20,37,.1)),
-    #1c304c url('/assets/chippa/fondo-jeans.jpg') center 54% / cover no-repeat;
+.app-shell .dashboard-hero {
+  border-color: #2e405c;
+  background: linear-gradient(90deg,rgba(8,14,27,.42),transparent 70%),
+    #122238 url('/assets/chippa/jeans-inicio-2k.jpg') center 67% / cover no-repeat;
 }
 .app-shell .dashboard-hero-copy > .eyebrow, .app-shell .dashboard-hero-copy h1, .app-shell .dashboard-hero-copy > p, .app-shell .hero-participants { color: #fff; text-shadow: 0 1px 2px rgba(47,17,61,.2); }
 .app-shell .dashboard-hero-copy > p { font-size: 14px; line-height: 1.7; }
@@ -698,7 +691,12 @@ textarea { resize: vertical; line-height: 1.7; }
 .app-shell .section-heading h2 { color: #36243f; font-size: 27px; }
 .app-shell .story-progress { border-color: #8c3da9; background: linear-gradient(110deg,#bd176c,#7140b3 62%,#137e9f); }
 .app-shell .story-progress small, .app-shell .story-progress b, .app-shell .story-progress button { color: #fff; font-size: 12px; }
-.app-shell .friends-hero, .app-shell .friend-detail-hero { border-color: #95135e; background: linear-gradient(112deg,#d41470 0%,#7839b2 58%,#117d9f 100%); }
+.app-shell .friends-hero {
+  border-color: #403257;
+  background: linear-gradient(90deg,rgba(15,11,32,.32),transparent 68%),
+    #19162e url('/assets/chippa/jeans-amigos-2k.jpg') center 56% / cover no-repeat;
+}
+.app-shell .friend-detail-hero { border-color: #95135e; background: linear-gradient(112deg,#d41470 0%,#7839b2 58%,#117d9f 100%); }
 .app-shell .friends-hero h1, .app-shell .friend-detail-hero h1, .app-shell .friends-hero p, .app-shell .friend-detail-hero p { color: #fff; }
 .app-shell .friends-hero .eyebrow, .app-shell .friend-detail-hero .eyebrow, .app-shell .games-intro .eyebrow { color: #fff4fc; }
 .app-shell .friends-hero p, .app-shell .friend-detail-hero p { font-size: 14px; }
@@ -710,6 +708,11 @@ textarea { resize: vertical; line-height: 1.7; }
 .app-shell .modal-card h2 { color: #39253f; font-size: 30px; }
 
 .outings-heading { display: flex; align-items: center; justify-content: space-between; gap: 28px; padding: 34px clamp(22px,4vw,46px); border: 1px solid #a6297c; border-radius: 27px; background: linear-gradient(112deg,#d71672 0%,#8a42bd 58%,#168cb4 100%); color: white; box-shadow: 0 10px 28px rgba(121,35,113,.2); }
+.outings-page > .outings-heading {
+  border-color: #2d496c;
+  background: linear-gradient(90deg,rgba(8,18,35,.57),rgba(8,18,35,.35) 55%,transparent 85%),
+    #112b48 url('/assets/chippa/jeans-salidas-2k.jpg') center 24% / cover no-repeat;
+}
 .outings-heading .eyebrow { color: #fff4fc; }
 .outings-heading h1 { margin: 10px 0; color: white; font: 600 clamp(36px,5vw,56px)/1 'Fredoka',sans-serif; }
 .outings-heading p { max-width: 610px; margin: 0; color: #fff9ff; font-size: 15px; line-height: 1.7; }
@@ -768,7 +771,7 @@ textarea { resize: vertical; line-height: 1.7; }
   .app-shell .mode-pill { padding: 5px 7px; font-size: 8px; }
   .app-shell .content { padding: 22px 15px 34px; }
   .app-shell .dashboard-kicker { font-size: 10px; }
-  .app-shell .dashboard-hero { min-height: 270px; padding: 23px 18px; }
+  .app-shell .dashboard-hero { min-height: 270px; padding: 23px 18px; background-position: center, 82% center; }
   .app-shell .dashboard-hero-copy { max-width: 68%; }
   .app-shell .dashboard-hero-copy h1 { font-size: 35px; }
   .app-shell .dashboard-hero-copy > p { font-size: 12px; }
@@ -782,10 +785,11 @@ textarea { resize: vertical; line-height: 1.7; }
   .app-shell .activity-info b { font-size: 12px; }
   .app-shell .activity-info small { font-size: 10px; }
   .app-shell .story-progress b, .app-shell .story-progress small { font-size: 11px; }
-  .app-shell .friends-hero { padding: 25px 20px; }
+  .app-shell .friends-hero { padding: 25px 20px; background-position: center, right center; }
   .app-shell .friends-hero p { font-size: 13px; }
   .app-shell .games-intro p { font-size: 13px; }
   .outings-heading { align-items: stretch; flex-direction: column; gap: 19px; padding: 24px 21px; border-radius: 22px; }
+  .outings-page > .outings-heading { background-position: center, 78% top; background-size: auto, auto 120%; }
   .outings-heading h1 { font-size: 39px; }
   .outings-heading p { font-size: 14px; }
   .outings-heading .primary-button { width: 100%; }
