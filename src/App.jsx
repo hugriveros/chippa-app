@@ -33,6 +33,7 @@ function ExperienceMark({ value, fallback = '💫' }) {
 function SidebarIcon({ name }) {
   const artwork = {
     home: <><path d="m8 19 12-10 12 10v11H8V19Z" fill="white" /><path d="M16 30v-7h8v7" fill="#FEE7F2" /><path d="m20 16 1.1 1.2 1.3-.3-.6 1.2.6 1.2-1.3-.3-1.1 1.2-.1-1.3-1.2-.7 1.2-.7.1-1.3Z" fill="#E91577" /></>,
+    outings: <><rect x="8" y="10" width="24" height="22" rx="5" fill="white" /><path d="M14 7v6M26 7v6M9 16h22" stroke="#8A42BD" strokeWidth="2" strokeLinecap="round" /><path d="M14 21h4M22 21h4M14 26h4" stroke="#D41470" strokeWidth="2" strokeLinecap="round" /><path d="m27 22 .8 1.7 1.9.3-1.4 1.3.3 1.9-1.6-.9-1.7.9.3-1.9-1.4-1.3 1.9-.3.9-1.7Z" fill="#F2B532" /></>,
     friends: <><circle cx="15" cy="15" r="5" fill="white" /><circle cx="27" cy="16" r="4" fill="#FFE7F2" /><path d="M6 31c.7-5.1 4-8 9-8s8.3 2.9 9 8" fill="white" /><path d="M23 24c4.5-.8 8.2 1.8 9 6" stroke="white" strokeWidth="2.3" strokeLinecap="round" /><path d="m26 9 .8 1.4 1.6.3-1.2 1.1.2 1.6-1.4-.8-1.4.8.3-1.6-1.2-1.1 1.6-.3.7-1.4Z" fill="#FFD23F" /></>,
     moment: <><path d="M10 7h19a3 3 0 0 1 3 3v21H13a3 3 0 0 1-3-3V7Z" fill="white" /><path d="M14 12h13M14 17h11M14 22h8" stroke="#B60D65" strokeWidth="1.8" strokeLinecap="round" /><path d="M9 8v19a4 4 0 0 0 4 4" stroke="#FFD23F" strokeWidth="2.3" strokeLinecap="round" /><path d="m27 25 .8 1.5 1.7.3-1.2 1.2.2 1.7-1.5-.8-1.5.8.3-1.7-1.3-1.2 1.7-.3.8-1.5Z" fill="#8A42BD" /></>,
     games: <><path d="M12 13h16a6 6 0 0 1 5.7 7.8l-1.8 5.6a3 3 0 0 1-4.8 1.3l-3-2.3h-8.2l-3 2.3a3 3 0 0 1-4.8-1.3l-1.8-5.6A6 6 0 0 1 12 13Z" fill="white" /><path d="M13 18v6M10 21h6" stroke="#B60D65" strokeWidth="2.2" strokeLinecap="round" /><circle cx="27" cy="19" r="1.8" fill="#F08B3E" /><circle cx="30" cy="23" r="1.8" fill="#8550C5" /><path d="m21 10 1 2" stroke="#FFD23F" strokeWidth="2.5" strokeLinecap="round" /></>,
@@ -486,6 +487,7 @@ function Sidebar({ premiumActive, page, moduleId, setPage, openModule, friendReq
   const quick = [ ['moment', 'Nuestra cita', 'moment'], ['same', 'Juegos', 'games'], ['letters', 'Cartas', 'letters'], ['next', 'Aventuras', 'adventures'] ];
   return <aside className="sidebar"><button className="sidebar-brand" onClick={() => setPage('dashboard')} aria-label="Ir al inicio de Chippa"><Brand /></button>
     <div className="side-label">LA HISTORIA</div><button className={`side-link ${page === 'dashboard' ? 'active' : ''}`} onClick={() => setPage('dashboard')}><SidebarIcon name="home" /> Inicio</button>
+    <button className={`side-link ${page === 'outings' ? 'active' : ''}`} onClick={() => setPage('outings')}><SidebarIcon name="outings" /> Salidas</button>
     <button className={`side-link ${page === 'friends' ? 'active' : ''}`} onClick={() => setPage('friends')}><SidebarIcon name="friends" /> Amigos{friendRequestCount > 0 && <i className="friend-nav-badge" aria-label={`${friendRequestCount} solicitudes pendientes`}>{friendRequestCount}</i>}</button>
     <div className="side-label spaced">EXPLORAR</div>{quick.map(([id, title, emoji]) => {
       const premium = !premiumActive && id !== 'same' && modules.some((item) => item.id === id && item.premium);
