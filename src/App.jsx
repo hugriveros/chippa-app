@@ -30,6 +30,21 @@ function ExperienceMark({ value, fallback = '💫' }) {
     : mark;
 }
 
+function SidebarIcon({ name }) {
+  const artwork = {
+    home: <><path d="m8 19 12-10 12 10v11H8V19Z" fill="white" /><path d="M16 30v-7h8v7" fill="#FEE7F2" /><path d="m20 16 1.1 1.2 1.3-.3-.6 1.2.6 1.2-1.3-.3-1.1 1.2-.1-1.3-1.2-.7 1.2-.7.1-1.3Z" fill="#E91577" /></>,
+    friends: <><circle cx="15" cy="15" r="5" fill="white" /><circle cx="27" cy="16" r="4" fill="#FFE7F2" /><path d="M6 31c.7-5.1 4-8 9-8s8.3 2.9 9 8" fill="white" /><path d="M23 24c4.5-.8 8.2 1.8 9 6" stroke="white" strokeWidth="2.3" strokeLinecap="round" /><path d="m26 9 .8 1.4 1.6.3-1.2 1.1.2 1.6-1.4-.8-1.4.8.3-1.6-1.2-1.1 1.6-.3.7-1.4Z" fill="#FFD23F" /></>,
+    moment: <><path d="M10 7h19a3 3 0 0 1 3 3v21H13a3 3 0 0 1-3-3V7Z" fill="white" /><path d="M14 12h13M14 17h11M14 22h8" stroke="#B60D65" strokeWidth="1.8" strokeLinecap="round" /><path d="M9 8v19a4 4 0 0 0 4 4" stroke="#FFD23F" strokeWidth="2.3" strokeLinecap="round" /><path d="m27 25 .8 1.5 1.7.3-1.2 1.2.2 1.7-1.5-.8-1.5.8.3-1.7-1.3-1.2 1.7-.3.8-1.5Z" fill="#8A42BD" /></>,
+    games: <><path d="M12 13h16a6 6 0 0 1 5.7 7.8l-1.8 5.6a3 3 0 0 1-4.8 1.3l-3-2.3h-8.2l-3 2.3a3 3 0 0 1-4.8-1.3l-1.8-5.6A6 6 0 0 1 12 13Z" fill="white" /><path d="M13 18v6M10 21h6" stroke="#B60D65" strokeWidth="2.2" strokeLinecap="round" /><circle cx="27" cy="19" r="1.8" fill="#F08B3E" /><circle cx="30" cy="23" r="1.8" fill="#8550C5" /><path d="m21 10 1 2" stroke="#FFD23F" strokeWidth="2.5" strokeLinecap="round" /></>,
+    letters: <><path d="M8 12a3 3 0 0 1 3-3h18a3 3 0 0 1 3 3v16a3 3 0 0 1-3 3H11a3 3 0 0 1-3-3V12Z" fill="white" /><path d="m9 13 11 8 11-8" stroke="#A22AA0" strokeWidth="2" strokeLinejoin="round" /><path d="m20 25-.8-.7c-2.5-2.2-4.2-3.7-4.2-5.5a2.8 2.8 0 0 1 5-1.7 2.8 2.8 0 0 1 5 1.7c0 1.8-1.7 3.3-4.2 5.5l-.8.7Z" fill="#E91577" stroke="white" strokeWidth=".8" /></>,
+    adventures: <><path d="m7 11 9-4 8 4 9-4v22l-9 4-8-4-9 4V11Z" fill="white" /><path d="M16 7v22M24 11v22" stroke="#AD68CE" strokeWidth="1.7" /><path d="M11 23c3-5 5 3 8-2s4 1 8-5" stroke="#159EC5" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 2" /><path d="M27 11c0 2.5-3 5.5-3 5.5S21 13.5 21 11a3 3 0 1 1 6 0Z" fill="#E91577" /><circle cx="24" cy="11" r="1" fill="white" /></>,
+    results: <><path d="M8 10a4 4 0 0 1 4-4h17a4 4 0 0 1 4 4v11a4 4 0 0 1-4 4H17l-7 5v-5.6a4 4 0 0 1-2-3.4V10Z" fill="white" /><circle cx="15" cy="15.5" r="1.5" fill="#E91577" /><circle cx="20.5" cy="15.5" r="1.5" fill="#8A42BD" /><circle cx="26" cy="15.5" r="1.5" fill="#159EC5" /><path d="M14 20h12" stroke="#C7A6D7" strokeWidth="1.5" strokeLinecap="round" /><path d="m9 7 1 .3.5 1 .5-1L12 7l-1-.6-.5-1-.5 1-1 .6Z" fill="#FFD23F" /></>,
+    capsule: <><path d="M7 13a4 4 0 0 1 4-4h4l2-2h6l2 2h4a4 4 0 0 1 4 4v14a4 4 0 0 1-4 4H11a4 4 0 0 1-4-4V13Z" fill="white" /><circle cx="20" cy="20" r="7" fill="#BDEBF4" stroke="#803FB5" strokeWidth="2" /><circle cx="20" cy="20" r="3.4" fill="#E91577" /><path d="M12 12h3" stroke="#FFD23F" strokeWidth="2" strokeLinecap="round" /><path d="m28 8 .7 1.3L30 10l-1.3.7L28 12l-.7-1.3L26 10l1.3-.7L28 8Z" fill="#FFD23F" /></>,
+    passport: <><path d="M12 7h16a3 3 0 0 1 3 3v21H14a4 4 0 0 1-4-4V9a2 2 0 0 1 2-2Z" fill="white" /><path d="M14 7v24" stroke="#FFD23F" strokeWidth="2" /><circle cx="22" cy="18" r="5.5" fill="#F8E5F2" stroke="#B32E88" strokeWidth="1.5" /><path d="m19 18 2 2 4-5" stroke="#7A43BA" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /><path d="M18 27h9" stroke="#B32E88" strokeWidth="1.5" strokeLinecap="round" /></>
+  };
+  return <span className={`sidebar-icon-box sidebar-icon-${name}`} aria-hidden="true"><svg viewBox="0 0 40 40" focusable="false">{artwork[name]}</svg></span>;
+}
+
 function PremiumLockIcon() {
   return <svg className="premium-lock-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="4.5" y="8.5" width="11" height="9" rx="2" /><path d="M7 8.5V6a3 3 0 0 1 6 0v2.5" /><path d="M10 12v2" /></svg>;
 }
@@ -358,7 +373,7 @@ function App() {
   const pendingFriendRequests = social.ownerId === currentUser.id ? (social.requests || []).filter((request) => request.recipientId === currentUser.id && request.status === 'pending').length : 0;
 
   return <div className="app-shell">
-    <Sidebar premiumActive={premiumActive} page={page} setPage={changePage} openModule={openModule} state={state} friendRequestCount={pendingFriendRequests} />
+    <Sidebar premiumActive={premiumActive} page={page} moduleId={moduleId} setPage={changePage} openModule={openModule} state={state} friendRequestCount={pendingFriendRequests} />
     <div className="app-main">
       <header className="topbar">
         <button className="mobile-brand" onClick={() => setPage('dashboard')} aria-label="Ir al inicio de Chippa"><img src="/assets/chippa/brand.png" alt="CHIPPA" /></button>
@@ -471,24 +486,24 @@ function AuthPage({ mode, setMode, onSubmit, onBack, onLegal, busy, cloud }) {
   </section><LegalFooter className="auth-legal-footer" onOpen={onLegal} /></main>;
 }
 
-function Sidebar({ premiumActive, page, setPage, openModule, state, friendRequestCount = 0 }) {
-  const quick = [ ['moment', 'Nuestra cita', '📓'], ['same', 'Juegos', '🎮'], ['letters', 'Cartas', '💌'], ['next', 'Aventuras', '🗺️'] ];
+function Sidebar({ premiumActive, page, moduleId, setPage, openModule, state, friendRequestCount = 0 }) {
+  const quick = [ ['moment', 'Nuestra cita', 'moment'], ['same', 'Juegos', 'games'], ['letters', 'Cartas', 'letters'], ['next', 'Aventuras', 'adventures'] ];
   return <aside className="sidebar"><button className="sidebar-brand" onClick={() => setPage('dashboard')} aria-label="Ir al inicio de Chippa"><Brand /></button><div className="experience-chip"><span><ExperienceMark value={state.experience?.emoji} /></span><div><b>{state.experience?.title || 'Tu espacio en CHIPPA'}</b><small>{state.experience?.place || 'Conecta con tus amigos'}</small></div><span className="chip-dots">···</span></div>
-    <div className="side-label">LA HISTORIA</div><button className={`side-link ${page === 'dashboard' ? 'active' : ''}`} onClick={() => setPage('dashboard')}><span>▧</span> Inicio</button>
-    <button className={`side-link ${page === 'outings' ? 'active' : ''}`} onClick={() => setPage('outings')}><span>✦</span> Salidas<i>→</i></button>
-    <button className={`side-link ${page === 'friends' ? 'active' : ''}`} onClick={() => setPage('friends')}><span>♡</span> Amigos{friendRequestCount > 0 && <i className="friend-nav-badge" aria-label={`${friendRequestCount} solicitudes pendientes`}>{friendRequestCount}</i>}</button>
+    <div className="side-label">LA HISTORIA</div><button className={`side-link ${page === 'dashboard' ? 'active' : ''}`} onClick={() => setPage('dashboard')}><SidebarIcon name="home" /> Inicio</button>
+    <button className={`side-link ${page === 'friends' ? 'active' : ''}`} onClick={() => setPage('friends')}><SidebarIcon name="friends" /> Amigos{friendRequestCount > 0 && <i className="friend-nav-badge" aria-label={`${friendRequestCount} solicitudes pendientes`}>{friendRequestCount}</i>}</button>
     <div className="side-label spaced">EXPLORAR</div>{quick.map(([id, title, emoji]) => {
       const premium = !premiumActive && id !== 'same' && modules.some((item) => item.id === id && item.premium);
-      return <button className={`side-link ${title === 'Juegos' && (page === 'games' || page === 'module' && ['same','story','memory','missions','trivia'].includes(id)) ? 'active' : ''} ${premium ? 'premium-menu-link' : ''}`} key={id} onClick={() => id === 'same' ? setPage('games') : openModule(id)} title={premium ? 'Contenido Premium bloqueado' : undefined}><span>{emoji}</span>{title}{premium ? <span className="side-premium-lock" role="img" aria-label="Premium bloqueado"><PremiumLockIcon /></span> : <i>→</i>}</button>;
+      const active = id === 'same' ? page === 'games' || page === 'module' && ['same','story','memory','missions','trivia'].includes(moduleId) : page === 'module' && moduleId === id;
+      return <button className={`side-link ${active ? 'active' : ''} ${premium ? 'premium-menu-link' : ''}`} key={id} onClick={() => id === 'same' ? setPage('games') : openModule(id)} title={premium ? 'Contenido Premium bloqueado' : undefined}><SidebarIcon name={emoji} />{title}{premium ? <span className="side-premium-lock" role="img" aria-label="Premium bloqueado"><PremiumLockIcon /></span> : <i>→</i>}</button>;
     })}
-    <div className="side-label spaced">SU RECUERDO</div><button className={`side-link ${page === 'results' ? 'active' : ''}`} onClick={() => setPage('results')}><span>✦</span> Sus respuestas</button><button className={`side-link ${premiumActive ? '' : 'premium-menu-link'} ${page === 'capsule' ? 'active' : ''}`} onClick={() => setPage('capsule')} title="Contenido Premium bloqueado"><span>📸</span> Cápsula{!premiumActive && <span className="side-premium-lock" role="img" aria-label="Premium bloqueado"><PremiumLockIcon /></span>}</button><button className={`side-link ${page === 'passport' ? 'active' : ''}`} onClick={() => setPage('passport')}><span>🛂</span> Pasaporte</button>
+    <div className="side-label spaced">SU RECUERDO</div><button className={`side-link ${page === 'results' ? 'active' : ''}`} onClick={() => setPage('results')}><SidebarIcon name="results" /> Sus respuestas</button><button className={`side-link ${premiumActive ? '' : 'premium-menu-link'} ${page === 'capsule' || page === 'module' && moduleId === 'capsule' ? 'active' : ''}`} onClick={() => setPage('capsule')} title="Contenido Premium bloqueado"><SidebarIcon name="capsule" /> Cápsula{!premiumActive && <span className="side-premium-lock" role="img" aria-label="Premium bloqueado"><PremiumLockIcon /></span>}</button><button className={`side-link ${page === 'passport' || page === 'module' && moduleId === 'passport' ? 'active' : ''}`} onClick={() => setPage('passport')}><SidebarIcon name="passport" /> Pasaporte</button>
     <div className="sidebar-bottom"><div className="sidebar-sticker">✦ <span>coleccionen<br />momentos</span> ♡</div><div className="sidebar-foot">Hecho para guardar historias</div></div>
   </aside>;
 }
 
 function MobileNav({ premiumActive, page, setPage, openGames, friendRequestCount = 0 }) {
   const items = [
-    ['dashboard', '⌂', 'Inicio', null], ['outings', '✦', 'Salidas', null], ['games', '🎮', 'Juegos', null], ['friends', '♡', 'Amigos', null], ['capsule', '📸', 'Cápsula', 'capsule'], ['passport', '🛂', 'Pasaporte', null]
+    ['dashboard', '⌂', 'Inicio', null], ['games', '🎮', 'Juegos', null], ['friends', '♡', 'Amigos', null], ['capsule', '📸', 'Cápsula', 'capsule'], ['passport', '🛂', 'Pasaporte', null]
   ];
   return <nav className="mobile-nav" aria-label="Navegación principal">{items.map(([target, icon, label, premiumId]) => {
     const premium = !premiumActive && Boolean(premiumId && modules.some((item) => item.id === premiumId && item.premium));

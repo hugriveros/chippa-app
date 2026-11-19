@@ -52,3 +52,33 @@
 @media (max-width: 600px) { .play-card { min-height: 250px; padding: 12px; border-radius: 17px; }.play-card-art { height: 67px; gap: 9px; }.play-card-art > span { width: 51px; height: 51px; font-size: 27px; border-radius: 16px; }.play-card-title { font-size: 18px; }.play-card-desc { font-size: 10px; margin-bottom: 12px; }.play-card-bottom { align-items: flex-start; flex-direction: column; gap: 9px; }.play-card-bottom small { font-size: 7px; }.play-card-bottom b { font-size: 9px; }.play-card-top > span:first-child { font-size: 6px; max-width: 75px; }.play-access { padding: 4px 5px; font-size: 7px; }.play-access svg { width: 10px; height: 10px; }.games-intro { padding: 23px 20px; border-radius: 22px; }.games-intro-art { font-size: 45px; padding: 0; }.games-intro-art span { top: -28px; font-size: 20px; }.games-intro-art i { bottom: -25px; font-size: 20px; }.games-intro h1 { font-size: 31px; }.games-intro p { font-size: 10px; }.games-intro-note { font-size: 19px; }.games-toolbar { flex-wrap: wrap; margin-top: 20px; }.games-toolbar button { padding: 0 13px; }.games-library { gap: 10px; }.games-toolbar > span { padding-left: 6px; }.memory-card { min-height: 78px; border-radius: 12px; }.memory-card-face > span { font-size: 25px; }.memory-card-face > b { font-size: 15px; }.memory-controls h2 { font-size: 24px; }.memory-stats > span { font-size: 8px; }.memory-stats b { font-size: 23px; }.game-aside { padding: 23px; }.game-aside h3 { font-size: 24px; }.question-card h2 { font-size: 25px; }.round-answer-list { grid-template-columns: 1fr; }.round-complete h2 { font-size: 27px; }.memory-win > b { font-size: 23px; } }
 @media (prefers-reduced-motion: reduce) { .play-card, .play-card-art > span, .memory-card, .option-list button { transition: none; }.play-card:hover, .memory-card:hover, .option-list button:hover { transform: none; } }
 @media (max-width:600px) { .activity-group-games .activity-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }.dashboard-content .activity-groups { gap: 24px; }.play-card-art img { width: 36px; height: 36px; }.dashboard-content .activity-group:first-child .play-card { grid-template-columns: 65px 1fr; gap: 6px 12px; }.dashboard-content .activity-group:first-child .play-card-art i { display: none; } }
+
+/* Saturated CHIPPA cards for the authenticated app workspace. */
+.app-shell .play-card { border-width: 1.5px; box-shadow: 0 6px 0 rgba(74,37,90,.14), 0 12px 22px rgba(86,38,93,.11), inset 0 1px 0 rgba(255,255,255,.55); }
+.app-shell .play-card::before { background: linear-gradient(145deg,rgba(255,255,255,.24),transparent 47%,rgba(63,27,74,.08)); }
+.app-shell .play-card:hover { border-color: #772b83; box-shadow: 0 9px 0 rgba(74,37,90,.12), 0 18px 28px rgba(86,38,93,.18); }
+.app-shell .play-card.tone-lilac { border-color: #8954bd; background: linear-gradient(145deg,#b97ee9,#d6a5ef); }
+.app-shell .play-card.tone-pink { border-color: #ce3e82; background: linear-gradient(145deg,#f15b9c,#ff9dc4); }
+.app-shell .play-card.tone-sky { border-color: #278eae; background: linear-gradient(145deg,#42b3d4,#9ce1ee); }
+.app-shell .play-card.tone-butter { border-color: #c48716; background: linear-gradient(145deg,#ffc33f,#ffdf76); }
+.app-shell .play-card.tone-peach { border-color: #ce6349; background: linear-gradient(145deg,#f17b58,#ffb183); }
+.app-shell .play-card.tone-mint { border-color: #579b37; background: linear-gradient(145deg,#7fbe4d,#b9e47c); }
+.app-shell .play-card-top { color: #483455; font-size: 9px; }
+.app-shell .play-access { border-color: rgba(255,255,255,.95); color: #2d6b39; background: #fff; font-size: 9px; box-shadow: 0 2px 7px rgba(54,35,63,.12); }
+.app-shell .play-access.paid { border-color: #8e5a20; color: #53340d; background: #ffe59a; }
+.app-shell .play-card-art > span { border: 2px solid #fff; background: rgba(255,255,255,.88); box-shadow: 0 6px 12px rgba(61,36,77,.18); }
+.app-shell .play-card-art i { color: #702f92; opacity: .85; text-shadow: 0 1px 0 rgba(255,255,255,.6); }
+.app-shell .play-card-title { color: #35233f; text-shadow: 0 1px 0 rgba(255,255,255,.36); }
+.app-shell .play-card-desc { color: #48384d; font-size: 12px; }
+.app-shell .play-card-bottom { border-top-color: rgba(61,34,72,.25); }
+.app-shell .play-card-bottom small { color: #44364a; font-size: 10px; }
+.app-shell .play-card-bottom .play-card-action { border-color: rgba(99,39,101,.27); background: #fff; color: #8c1458; font-size: 11px; box-shadow: 0 3px 8px rgba(76,37,83,.13); }
+.app-shell .play-card-premium .play-card-bottom .play-card-action { border-color: #8e5a20; background: #ffe59a; color: #53340d; }
+.app-shell .play-card.activity-completed { outline: 2px solid #dc267e; outline-offset: -4px; }
+@media (max-width: 600px) {
+  .app-shell .play-card-title { font-size: 19px; }
+  .app-shell .play-card-desc { font-size: 11px; }
+  .app-shell .play-card-top > span:first-child { font-size: 8px; }
+  .app-shell .play-card-bottom small { font-size: 9px; }
+  .app-shell .play-card-bottom .play-card-action { font-size: 10px; }
+}
