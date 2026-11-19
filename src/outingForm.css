@@ -1,0 +1,142 @@
+.app-shell .outing-form-card {
+  width: min(calc(100% - 24px), 600px);
+  max-height: 92dvh;
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  padding: 0;
+  overscroll-behavior: contain;
+  border-color: #e0bdcf;
+  background: #fffdfb;
+}
+
+.outing-form-card::backdrop {
+  background: rgba(39, 23, 48, .55);
+  backdrop-filter: blur(3px);
+}
+
+.outing-form-header {
+  position: relative;
+  padding: 20px 62px 19px 24px;
+  border-bottom: 1px solid #ead6e6;
+  background: linear-gradient(115deg, #fbe4ef, #f1e8fb 70%, #e2f0f6);
+}
+
+.app-shell .outing-form-header h2 {
+  max-width: none;
+  margin: 0;
+  font-size: clamp(24px, 4vw, 32px);
+}
+
+.outing-form-header .modal-close {
+  width: 38px;
+  height: 38px;
+  top: 12px;
+  right: 14px;
+  background: #fff8fc;
+  color: #682554;
+}
+
+.outing-form-card form { gap: 0; }
+
+.outing-form-fields,
+.outing-mark-picker,
+.outing-companion-picker {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.outing-form-fields {
+  display: grid;
+  gap: 16px;
+  padding: 19px 24px 18px;
+}
+
+.outing-form-fields label,
+.outing-form-fields legend {
+  color: #4c3654;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.outing-form-fields input:not([type="radio"]),
+.outing-form-fields select,
+.outing-form-fields textarea {
+  min-height: 46px;
+  border-color: #dbc7d8;
+  font-size: 16px;
+}
+
+.outing-optional { color: #6e5d75; font-size: 12px; font-weight: 600; }
+.outing-plan-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 12px; }
+.outing-date { display: grid; gap: 7px; }
+
+.outing-date-trigger {
+  width: 100%;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid #dbc7d8;
+  border-radius: 11px;
+  background: #fffdfc;
+  color: #3d2e45;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.outing-date-trigger img { width: 26px; height: 26px; flex-shrink: 0; object-fit: contain; }
+.outing-date-trigger:hover, .outing-date-trigger[aria-expanded="true"] { border-color: #bb3b83; background: #fff3f9; }
+.outing-calendar { padding: 8px; border: 1px solid #e3c8dc; border-radius: 14px; background: #fff8fc; }
+.outing-calendar-header { display: grid; grid-template-columns: 36px minmax(0, 1fr) 36px; align-items: center; gap: 4px; text-align: center; }
+.outing-calendar-header strong { color: #4c3654; font-size: 12px; }
+.outing-calendar-header strong::first-letter { text-transform: uppercase; }
+.outing-calendar-header button { border: 0; min-height: 36px; border-radius: 8px; background: #f6e6f1; color: #802158; font-size: 24px; line-height: 1; }
+.outing-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; padding: 6px 0; }
+.outing-calendar-grid > span { padding: 4px 0; color: #67526d; text-align: center; font-size: 10px; font-weight: 700; }
+.outing-calendar-grid > button { min-width: 0; min-height: 34px; padding: 0; border: 1px solid transparent; border-radius: 7px; background: transparent; color: #49344e; font-size: 12px; font-weight: 700; }
+.outing-calendar-grid > button[aria-current="date"] { border-color: #cf89b3; }
+.outing-calendar-grid > button:hover { background: #f3d9eb; }
+.outing-calendar-grid > button[aria-pressed="true"] { background: #a91d69; color: white; }
+.outing-calendar-today { min-height: 34px; padding: 0 8px; border: 0; border-radius: 8px; background: #f6e6f1; color: #802158; font-size: 12px; font-weight: 800; }
+
+.outing-mark-picker legend, .outing-companion-picker legend { margin-bottom: 8px; padding: 0; }
+.outing-mark-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(62px, 1fr)); gap: 6px; }
+.outing-mark-options .outing-mark-option { display: grid; justify-items: center; align-content: center; gap: 5px; min-height: 67px; padding: 6px 2px; border: 1px solid #ebdce8; border-radius: 11px; background: #fff; font-size: 10px; cursor: pointer; }
+.outing-mark-option input { position: absolute; width: 1px; height: 1px; opacity: 0; padding: 0; }
+.outing-mark-option img { width: 36px; height: 36px; object-fit: contain; }
+.outing-mark-option:has(input:focus-visible) { outline: 3px solid #b27df4; outline-offset: 2px; }
+.outing-mark-option:hover, .outing-mark-option:has(input:checked) { border-color: #b52f7a; background: #fff0f7; }
+
+.outing-companion-picker .outing-person-option { display: grid; grid-template-columns: 24px 32px minmax(0, 1fr); align-items: center; gap: 9px; min-height: 48px; padding: 5px 10px; border: 1px solid #ebdce8; border-radius: 11px; background: white; overflow-wrap: anywhere; cursor: pointer; }
+.outing-person-option input { appearance: auto; width: 16px; height: 16px; margin: auto; padding: 0; accent-color: #a91d69; }
+.outing-person-avatar { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 10px; background: #f4e5f5; color: #88296a; }
+.outing-person-avatar .avatar-image { width: 25px; height: 25px; }
+.outing-person-option:hover, .outing-person-option:has(input:checked) { border-color: #b52f7a; background: #fff0f7; }
+.outing-friend-list { display: grid; gap: 5px; max-height: 170px; overflow: auto; margin-top: 6px; padding: 2px 3px; }
+.outing-companion-picker p { margin: 8px 0 0; color: #6b5472; font-size: 12px; }
+.outing-companion-picker .text-button { color: #82255f; font-size: inherit; }
+
+.outing-form-footer {
+  position: sticky;
+  z-index: 1;
+  bottom: 0;
+  padding: 12px 24px;
+  border-top: 1px solid #ead6e6;
+  background: #fffdfb;
+}
+
+.outing-form-footer .primary-button { min-height: 46px; font-size: 13px; overflow-wrap: anywhere; }
+.outing-form-footer .form-error { margin: 0 0 7px; font-size: 13px; }
+
+@media (max-width: 520px) {
+  .outing-form-header { padding-left: 16px; }
+  .outing-form-fields, .outing-form-footer { padding-left: 16px; padding-right: 16px; }
+  .outing-plan-fields { grid-template-columns: 1fr; }
+  .outing-calendar-grid > button { min-height: 36px; }
+}

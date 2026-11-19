@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  avatars, avatarOptions, destinations, modules
+  avatars, avatarOptions, modules
 } from './data.js';
 import { loadDemoState, resetDemoState, saveDemoState } from './lib/demoStore.js';
 import { supabaseConfigured, supabase } from './lib/supabase.js';
@@ -9,7 +9,7 @@ import {
   leaveCloudExperience, signIn, signOut, signUp
 } from './lib/cloudStore.js';
 import ExperienceModule from './ExperienceModule.jsx';
-import { labelDate, localDateValue } from './lib/format.js';
+import { labelDate } from './lib/format.js';
 import { LegalFooter, LegalPolicies } from './LegalPolicies.jsx';
 import GamesHub, { ActivityCard } from './GamesHub.jsx';
 import Avatar from './Avatar.jsx';
@@ -17,11 +17,11 @@ import FriendsPage, { Empty as EmptyFriends } from './FriendsPage.jsx';
 import { createEmptyState, emptyShared, loadFriends } from './lib/friendsStore.js';
 import { useAppState } from './context/AppStateContext.jsx';
 import PremiumCheckout from './PremiumCheckout.jsx';
+import OutingForm from './OutingForm.jsx';
 import { activityStatus, completionRecord, loadSimulatedPremium, premiumKey } from './lib/activityStatus.js';
 
 const groupOrder = ['Revive la cita', 'Juegos', 'Cartas', 'Aventuras', 'Conózcanse', 'Guarden recuerdos'];
 const emptyMember = () => ({ moment: {}, same: {}, stories: {}, trivia: {}, letters: [], questions: [], future: [], preferences: {}, votes: {} });
-const CHISPOSITA_CIRCLE_ICON = '/assets/chippa/chisposita-circulo.png';
 const navigationItems = [
   { target: 'dashboard', label: 'Inicio', icon: 'home' },
   { target: 'outings', label: 'Salidas', icon: 'outings' },
@@ -52,14 +52,6 @@ function SidebarIcon({ name }) {
     passport: <><path d="M12 7h16a3 3 0 0 1 3 3v21H14a4 4 0 0 1-4-4V9a2 2 0 0 1 2-2Z" fill="white" /><path d="M14 7v24" stroke="#FFD23F" strokeWidth="2" /><circle cx="22" cy="18" r="5.5" fill="#F8E5F2" stroke="#B32E88" strokeWidth="1.5" /><path d="m19 18 2 2 4-5" stroke="#7A43BA" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /><path d="M18 27h9" stroke="#B32E88" strokeWidth="1.5" strokeLinecap="round" /></>
   };
   return <span className={`sidebar-icon-box sidebar-icon-${name}`} aria-hidden="true"><svg viewBox="0 0 40 40" focusable="false">{artwork[name]}</svg></span>;
-}
-
-function ExperienceDateField({ value, onChange }) {
-  return <div className="experience-date-field"><input type="date" value={value} onChange={(event) => onChange(event.target.value)} required /><img src="/assets/chippa/calendar-pink-check.png" alt="" /></div>;
-}
-
-function ChispositaEmojiField() {
-  return <div className="experience-emoji-field" role="img" aria-label="Chisposita en círculo"><img src={CHISPOSITA_CIRCLE_ICON} alt="" /></div>;
 }
 
 function App() {
@@ -229,6 +221,8 @@ function App() {
   }, [currentUser?.id, state?.mode, refreshFriends]);
   const newMeetingWith = (friend) => { setMeetingFriend(friend); setShowExperienceForm(true); };
   const openNewOuting = () => { setMeetingFriend(null); setShowExperienceForm(true); };
+  const closeOutingForm = () => { setShowExperienceForm(false); setMeetingFriend(null); };
+  const outingFriends = social.ownerId === currentUser?.id ? social.connections || [] : [];
 
   const startLocalPreview = () => {
     setCloudUser(null);
@@ -266,20 +260,30 @@ function App() {
   const createExperience = async (form) => {
     const { friendId, ...experienceForm } = form;
     const selectedFriend = friendId
-      ? (social.connections || []).find((person) => person.id === friendId) || (meetingFriend?.id === friendId ? meetingFriend : null)
+      ? outingFriends.find((person) => person.id === friendId) || (meetingFriend?.id === friendId ? meetingFriend : null)
       : null;
+    if (friendId && !selectedFriend) throw new Error('Ese amigo ya no está disponible. Elige a otra persona o crea la salida para ti.');
     if (state?.mode === 'cloud' || (!state && user && supabaseConfigured)) {
       setBusy(true);
+      let created;
       try {
-        const created = await createCloudExperience(experienceForm, selectedFriend?.id || null);
+        created = await createCloudExperience(experienceForm, selectedFriend?.id || null);
         const loaded = await loadCloudState(user, created.id);
-        if (loaded) hydrateCloudState(loaded, user);
-        else setState({ ...state, experience: { ...created, status: 'active' }, mode: 'cloud' });
-        setShowExperienceForm(false);
-        setMeetingFriend(null);
+        if (loaded?.experience?.id !== created.id) throw new Error('No pudimos abrir la nueva salida.');
+        hydrateCloudState(loaded, user);
+        closeOutingForm();
         setPage('dashboard');
         notify(selectedFriend ? `Salida creada con ${selectedFriend.name}.` : 'Salida creada para ti.');
-      } catch (error) { notify(error.message || 'No pudimos crear la experiencia.'); }
+      } catch (error) {
+        if (!created) throw error;
+        update((current) => current ? ({
+          ...current,
+          experienceOptions: [...(current.experienceOptions || []), { ...experienceForm, id: created.id }]
+        }) : current);
+        closeOutingForm();
+        setPage('outings');
+        notify('La salida se guardó. Puedes abrirla desde Mis salidas.');
+      }
       finally { setBusy(false); }
       return;
     }
@@ -292,13 +296,13 @@ function App() {
         ...previous,
         experience,
         participants: people,
+        activeUserId: currentUser.id,
         memberData: newMembers,
         experienceArchives: [...archive, ...(previous.experienceArchives || [])],
         shared: { ...emptyShared(), stamps: [experienceForm.place] }
       };
     });
-    setShowExperienceForm(false);
-    setMeetingFriend(null);
+    closeOutingForm();
     setPage('dashboard');
     notify(selectedFriend ? `Salida creada con ${selectedFriend.name}.` : 'Salida creada para ti.');
   };
@@ -441,7 +445,9 @@ function App() {
       {page === 'results' && <ResultsPage state={state} onOpen={openModule} onBack={backFromActivity} update={update} />}
       {page === 'capsule' && <ExperienceModule key={`${state.experience.id}:capsule:${state.activeUserId}`} moduleId="capsule" state={state} update={update} updateMember={updateMember} currentUser={currentUser} partner={partner} currentMember={currentMember} onBack={backFromActivity} onToast={notify} />}
       {page === 'passport' && <ExperienceModule moduleId="passport" state={state} update={update} updateMember={updateMember} currentUser={currentUser} partner={partner} currentMember={currentMember} onBack={backFromActivity} onToast={notify} />}
-      {showExperienceForm && <ExperienceForm friend={meetingFriend} friends={social.connections || []} onClose={() => { setShowExperienceForm(false); setMeetingFriend(null); }} onSubmit={createExperience} busy={busy} />}
+      {showExperienceForm && <OutingForm friend={meetingFriend} friends={outingFriends} friendsLoading={friendsLoading}
+        friendsError={friendsError} onRetryFriends={() => refreshFriends().catch(() => {})}
+        onClose={closeOutingForm} onSubmit={createExperience} busy={busy} />}
       <nav className="mobile-nav" aria-label="Navegación principal"><NavigationButtons {...navigationProps} mobile /></nav>
       <LegalFooter className="app-legal-footer" onOpen={setLegalDocument} />
     </div>
@@ -715,21 +721,6 @@ function ResultsPage({ state, onOpen, onBack }) {
       return <section key={tile.id} className="result-tile"><div className={`result-number result-n-${index}`}>0{index + 1}</div><div className="result-main"><h2>{tile.title}</h2>{ready ? <div className="result-quotes">{people.map((person, personIndex) => <p key={person.id}><span><Avatar value={person.avatar} /> {person.name}</span><b>{summaries[personIndex]}</b></p>)}</div> : <p>{solo ? 'Completa esta actividad y elige que quieres guardar.' : 'Falta que ambas personas respondan y acepten compartir.'}</p>}</div><div className={`status-tag ${ready ? 'ready' : ''}`}>{ready ? 'Revelado' : 'Esperando'}</div><button className="activity-arrow" onClick={() => onOpen(tile.id)}>↗</button></section>;
     })}</div><button className="primary-button" onClick={() => onOpen('capsule')}>Guardar momentos en la cápsula →</button>
   </main>;
-}
-
-function ExperienceForm({ friend, friends = [], onClose, onSubmit, busy }) {
-  const [form, setForm] = useState({ title: '', date: localDateValue(), place: destinations[0], description: '', emoji: CHISPOSITA_CIRCLE_ICON, friendId: friend?.id || '' });
-  const friendOptions = [...new Map([...(friends || []), ...(friend ? [friend] : [])].map((entry) => [entry.id, entry])).values()];
-  useEffect(() => {
-    const closeOnEscape = (event) => { if (event.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', closeOnEscape);
-    return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [onClose]);
-  const submit = (event) => { event.preventDefault(); onSubmit(form); };
-  const invitedFriend = friendOptions.find((entry) => entry.id === form.friendId);
-  return <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section className="modal-card outing-form-card" role="dialog" aria-modal="true" aria-labelledby="experience-heading"><button className="modal-close" onClick={onClose} aria-label="Cerrar">×</button><div className="eyebrow">UN NUEVO PLAN</div><h2 id="experience-heading">Planea tu próxima salida.</h2>
-    <form onSubmit={submit}><label>Nombre de la salida<input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="Una tarde en el parque" required /></label><div className="field-row"><label>Fecha<ExperienceDateField value={form.date} onChange={(date) => setForm({ ...form, date })} /></label><label>Marca<ChispositaEmojiField /></label></div><label>Lugar<select value={form.place} onChange={(event) => setForm({ ...form, place: event.target.value })}>{destinations.map((place) => <option key={place}>{place}</option>)}</select></label><label>Descripción opcional<textarea rows="3" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="¿Qué te gustaría hacer?" /></label><label className="outing-companion-control">Invitar a un amigo <span>(opcional)</span><select value={form.friendId} onChange={(event) => setForm({ ...form, friendId: event.target.value })}><option value="">Crear salida solo para mí</option>{friendOptions.map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}</select></label>{invitedFriend && <div className="meeting-with-friend"><Avatar value={invitedFriend.avatar} /><span>Invitación para <b>{invitedFriend.name}</b></span></div>}<button className="primary-button full-button" disabled={busy}>{busy ? 'Guardando…' : 'Crear salida →'}</button></form>
-  </section></div>;
 }
 
 export { labelDate };

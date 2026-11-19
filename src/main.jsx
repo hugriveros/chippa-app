@@ -5,6 +5,7 @@ import './index.css';
 import './games.css';
 import './progress.css';
 import './friends.css';
+import './outingForm.css';
 import ErrorBoundary from './ErrorBoundary.jsx';
 import { AppStateProvider } from './context/AppStateContext.jsx';
 

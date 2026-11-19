@@ -143,12 +143,6 @@ textarea { resize: vertical; line-height: 1.7; }
 .setup-card > .setup-icon { width: 51px; height: 51px; display: grid; place-items: center; margin-bottom: 19px; border-radius: 16px; background: #fae1ef; font-size: 24px; }
 .setup-card .back-link { margin-top: 18px; }
 .field-row, .field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
-.experience-date-field { position: relative; min-width: 0; }
-.experience-date-field input { padding-right: 48px; }
-.experience-date-field input::-webkit-calendar-picker-indicator { opacity: 0; cursor: pointer; }
-.experience-date-field > img { width: 29px; height: 29px; position: absolute; top: 50%; right: 11px; object-fit: contain; transform: translateY(-50%); pointer-events: none; }
-.experience-emoji-field { min-height: 40px; display: grid; place-items: center; border: 1px solid #e8dfe6; border-radius: 11px; background: #fffdfc; }
-.experience-emoji-field img { width: 36px; height: 36px; object-fit: contain; }
 .experience-mark-image { display: block; width: 28px; height: 28px; object-fit: contain; border-radius: 50%; }
 .invite-code { margin: 18px 0; border: 1px dashed #e3b4d0; border-radius: 14px; padding: 14px; background: #fff7fc; color: #af3479; text-align: center; font: 600 20px 'Fredoka', sans-serif; letter-spacing: .12em; }
 .success-note { margin-top: 12px; color: #528254; font-size: 10px; font-weight: 700; }
@@ -750,7 +744,15 @@ textarea { resize: vertical; line-height: 1.7; }
 .outing-open:hover:not(:disabled) { border-color: #d41470; background: #fbd4e7; color: #7f0e55; }
 .outing-open i { font-size: 18px; font-style: normal; }
 .outing-detail > .back-link { min-height: 44px; font-size: 13px; }
-.outing-detail .outing-detail-heading { flex-direction: row; align-items: center; justify-content: flex-start; gap: clamp(14px,3vw,28px); }
+.outing-detail .outing-detail-heading {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: clamp(14px,3vw,28px);
+  border-color: #23516b;
+  background: linear-gradient(90deg,rgba(5,21,35,.52),rgba(5,21,35,.24) 66%,transparent),
+    #0f3448 url('/assets/chippa/jeans-detalle-2k.jpg') 65% center / cover no-repeat;
+}
 .outing-detail-heading .outing-mark { flex: 0 0 auto; border: 1px solid rgba(255,255,255,.78); }
 .outing-detail-heading > div { min-width: 0; overflow-wrap: anywhere; }
 .outing-detail .outing-detail-heading h1 { margin: 0; font-size: clamp(30px,5vw,52px); }
@@ -768,8 +770,6 @@ textarea { resize: vertical; line-height: 1.7; }
 @media (max-width: 600px) {
   .outing-detail-meta { grid-template-columns: 1fr; gap: 8px; margin-bottom: 24px; }
 }
-.outing-form-card .outing-companion-control > span { display: inline; color: #75657a; font-size: 11px; font-weight: 600; }
-.outing-form-card .meeting-with-friend { color: #46354e; font-size: 13px; }
 
 @media (max-width: 820px) {
   .outing-row { grid-template-columns: 34px 52px minmax(0,1fr) auto; gap: 12px; }
