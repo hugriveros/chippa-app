@@ -677,7 +677,12 @@ textarea { resize: vertical; line-height: 1.7; }
 .app-shell label { color: #493b52; font-size: 12px; }
 .app-shell input, .app-shell textarea, .app-shell select { min-height: 45px; color: #302338; font-size: 14px; }
 .app-shell .content > p, .app-shell .content .page-lede { color: #5f5265; font-size: 14px; line-height: 1.75; }
-.app-shell .dashboard-hero { border-color: #a81768; background-image: linear-gradient(108deg,rgba(204,17,103,.94),rgba(113,49,174,.9) 54%,rgba(13,123,163,.88)),url('/assets/chippa/collage-rosa.jpg'); }
+.app-shell .dashboard-hero,
+.outings-page > .outings-heading {
+  border-color: #3d5274;
+  background: linear-gradient(105deg,rgba(12,20,37,.62),rgba(12,20,37,.42) 55%,rgba(12,20,37,.1)),
+    #1c304c url('/assets/chippa/fondo-jeans.jpg') center 54% / cover no-repeat;
+}
 .app-shell .dashboard-hero-copy > .eyebrow, .app-shell .dashboard-hero-copy h1, .app-shell .dashboard-hero-copy > p, .app-shell .hero-participants { color: #fff; text-shadow: 0 1px 2px rgba(47,17,61,.2); }
 .app-shell .dashboard-hero-copy > p { font-size: 14px; line-height: 1.7; }
 .app-shell .hero-participants { font-size: 12px; }
