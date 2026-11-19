@@ -867,4 +867,12 @@ textarea { resize: vertical; line-height: 1.7; }
   .app-shell .friend-summary span { font-size: 10px; }
   .app-shell .mobile-nav button { font-size: 9px; }
 }
+.app-shell .dashboard-action-links { display: flex; align-items: center; gap: 12px; }
+.app-shell .dashboard-action-links .outing-list-link { min-height: 38px; padding: 0 13px; border-radius: 999px; background: #d41470; color: #fff; box-shadow: 0 4px 0 #ad105e; }
+.app-shell .dashboard-action-links .outing-list-link:hover { background: #ed3187; color: #fff; }
+@media (max-width: 600px) {
+  .app-shell .dashboard-action-links { flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
+  .app-shell .dashboard-action-links .all-activities { font-size: 10px; }
+  .app-shell .dashboard-action-links .outing-list-link { min-height: 36px; padding: 0 10px; }
+}
 

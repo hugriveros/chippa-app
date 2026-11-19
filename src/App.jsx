@@ -72,7 +72,6 @@ function App() {
   const [premiumActive, setPremiumActive] = useState(false);
   const [gamesFilter, setGamesFilter] = useState('Todos');
   const [showExperienceForm, setShowExperienceForm] = useState(false);
-  const [showExperienceMenu, setShowExperienceMenu] = useState(false);
   const [profileMenu, setProfileMenu] = useState(false);
   const [social, setSocial] = useState({ connections: [], requests: [], meetings: [] });
   const [friendsLoading, setFriendsLoading] = useState(false);
@@ -222,7 +221,7 @@ function App() {
     return () => { window.removeEventListener('focus', refresh); window.removeEventListener('storage', refresh); window.removeEventListener('online', refresh); document.removeEventListener('visibilitychange', refresh); if (channel) supabase.removeChannel(channel); };
   }, [currentUser?.id, state?.mode, refreshFriends]);
   const newMeetingWith = (friend) => { setMeetingFriend(friend); setShowExperienceForm(true); };
-  const openNewOuting = () => { setMeetingFriend(null); setShowExperienceForm(true); setShowExperienceMenu(false); };
+  const openNewOuting = () => { setMeetingFriend(null); setShowExperienceForm(true); };
 
   const startLocalPreview = () => {
     setCloudUser(null);
@@ -377,8 +376,6 @@ function App() {
     <div className="app-main">
       <header className="topbar">
         <button className="mobile-brand" onClick={() => setPage('dashboard')} aria-label="Ir al inicio de Chippa"><img src="/assets/chippa/brand.png" alt="CHIPPA" /></button>
-        <div className="experience-switcher"><button className="experience-switch-button" onClick={() => setShowExperienceMenu((open) => !open)} aria-expanded={showExperienceMenu}><span><ExperienceMark value={state.experience?.emoji} /></span><b>{state.experience?.title || 'Mis salidas'}</b><i>⌄</i></button>{showExperienceMenu && <div className="experience-menu">{outingEntries.map((item) => <button key={item.id} className={item.id === state.experience?.id ? 'active' : ''} onClick={() => selectExperience(item.id)}><span><ExperienceMark value={item.emoji} /></span><span><b>{item.title}</b><small>{item.place} · {labelDate(item.date)}</small></span></button>)}<button className="new-experience-option" onClick={() => setPage('outings')}>Ver todas las salidas</button><button className="new-experience-option" onClick={openNewOuting}>＋ Crear salida</button></div>}</div>
-        <div className="crumb">{page === 'module' ? modules.find((item) => item.id === moduleId)?.title : page === 'friends' ? 'Mis amigos' : page === 'outings' ? 'Mis salidas' : page === 'games' ? 'Juegos para dos' : page === 'dashboard' ? (partner ? 'Nuestra cita' : 'Mi salida') : page === 'results' ? 'Descubramos nuestras respuestas' : page === 'passport' ? 'Pasaporte digital' : 'Cápsula compartida'}</div>
         {state.mode === 'demo' && import.meta.env.DEV && <span className="mode-pill"><span /> Solo este dispositivo</span>}
         {state.mode === 'cloud' && <span className="mode-pill cloud-pill"><span /> Cuenta sincronizada</span>}
         <button className="membership-button" onClick={() => showPremiumNotice('subscription')}>{premiumActive ? '✓ Premium activo' : '✦ Premium'}</button><div className="profile-wrap">
@@ -529,7 +526,7 @@ function Dashboard({ premiumActive, state, currentUser, partner, onOpen, onPage,
       <span className="hero-doodle doodle-one">✧</span><span className="hero-doodle doodle-two">♡</span>
     </section>
     <section className="experience-strip"><div className="experience-meta"><span className="meta-icon"><img src="/assets/chippa/map-icon.png" alt="" /></span><div><small>LUGAR DE LA SALIDA</small><b>{state.experience?.place || 'Lugar por agregar'}</b></div></div><div className="meta-divider" /><div className="experience-meta"><span className="meta-icon"><img src="/assets/chippa/calendar-check-transparent.png" alt="" /></span><div><small>FECHA</small><b>{labelDate(state.experience?.date)}</b></div></div><div className="meta-divider" /><div className="experience-meta"><span className="meta-icon"><img src="/assets/chippa/chat-bubble.png" alt="" /></span><div><small>{partner ? 'ACOMPAÑANTES' : 'PLAN PERSONAL'}</small><b>{partner ? 'Salida compartida' : 'Solo para ti'}</b></div></div><button className="strip-action" onClick={partner ? onCreate : () => onPage('friends')}>{partner ? 'Nueva salida →' : 'Conectar con un amigo →'}</button></section>
-    <section className="activity-section"><div className="section-heading"><div><div className="eyebrow">ELIGE POR DÓNDE SEGUIR</div><h2>Hay muchas formas de continuar.</h2></div><button className="all-activities" onClick={() => onPage('results')}>Ver resultados <span>↗</span></button></div>
+    <section className="activity-section"><div className="section-heading"><div><div className="eyebrow">ELIGE POR DÓNDE SEGUIR</div><h2>Hay muchas formas de continuar.</h2></div><div className="dashboard-action-links"><button className="all-activities" onClick={() => onPage('results')}>Ver resultados <span>↗</span></button><button className="all-activities outing-list-link" onClick={() => onPage('outings')}>Ver todas las salidas <span>→</span></button></div></div>
       <div className="activity-groups">{grouped.map(({ group, items }, index) => <div className={`activity-group ${group === 'Juegos' ? 'activity-group-games' : ''}`} key={group}><div className="group-heading"><span className={`group-index index-${index}`}>0{index + 1}</span><h3>{group}</h3><i /></div><div className={`activity-grid ${items.length === 1 ? 'single-card' : ''}`}>{items.map((item) => <ActivityCard premiumActive={premiumActive} key={item.id} item={item} state={state} onOpen={onOpen} />)}</div></div>)}</div>
     </section>
     <section className="story-progress"><div className="progress-icon">✦</div><div><small>{partner ? 'SU HISTORIA EN CONSTRUCCIÓN' : 'TU HISTORIA EN CONSTRUCCIÓN'}</small><b>{doneCount} de {modules.length} actividades con timbre CHIPPA</b><div className="progress-track"><span style={{ width: `${Math.min(100, doneCount / modules.length * 100)}%` }} /></div></div><button onClick={() => onPage('capsule')}>Ver cápsula <span>→</span></button></section>
