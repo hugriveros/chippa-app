@@ -515,11 +515,11 @@ function Sidebar({ premiumActive, page, moduleId, setPage, openModule, friendReq
 
 function MobileNav({ premiumActive, page, setPage, openGames, friendRequestCount = 0 }) {
   const items = [
-    ['dashboard', '⌂', 'Inicio', null], ['games', '🎮', 'Juegos', null], ['friends', '♡', 'Amigos', null], ['capsule', '📸', 'Cápsula', 'capsule'], ['passport', '🛂', 'Pasaporte', null]
+    ['dashboard', 'home', 'Inicio', null], ['games', 'games', 'Juegos', null], ['friends', 'friends', 'Amigos', null], ['capsule', 'capsule', 'C\u00e1psula', 'capsule'], ['passport', 'passport', 'Pasaporte', null]
   ];
   return <nav className="mobile-nav" aria-label="Navegación principal">{items.map(([target, icon, label, premiumId]) => {
     const premium = !premiumActive && Boolean(premiumId && modules.some((item) => item.id === premiumId && item.premium));
-    return <button key={target} className={`${page === target ? 'active' : ''} ${premium ? 'premium-nav-link' : ''}`} onClick={() => target === 'games' ? openGames() : setPage(target)} aria-disabled={premium || undefined} title={premium ? 'Contenido Premium bloqueado' : undefined}><span>{icon}</span>{label}{target === 'friends' && friendRequestCount > 0 && <i className="friend-nav-badge" aria-label={`${friendRequestCount} solicitudes pendientes`}>{friendRequestCount}</i>}{premium && <i className="mobile-premium-lock"><PremiumLockIcon /></i>}</button>;
+    return <button key={target} className={`${page === target ? 'active' : ''} ${premium ? 'premium-nav-link' : ''}`} onClick={() => target === 'games' ? openGames() : setPage(target)} aria-disabled={premium || undefined} title={premium ? 'Contenido Premium bloqueado' : undefined}><SidebarIcon name={icon} />{label}{target === 'friends' && friendRequestCount > 0 && <i className="friend-nav-badge" aria-label={`${friendRequestCount} solicitudes pendientes`}>{friendRequestCount}</i>}{premium && <i className="mobile-premium-lock"><PremiumLockIcon /></i>}</button>;
   })}</nav>;
 }
 
