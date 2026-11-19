@@ -114,8 +114,8 @@ function App() {
         try {
           const loaded = await loadCloudState(data.session.user);
           if (!alive) return;
-          if (loaded) { hydrateCloudState(loaded, data.session.user); setPage(!loaded.experience?.id ? 'outings' : 'dashboard'); }
-          else setPage('outings');
+          if (loaded) hydrateCloudState(loaded, data.session.user);
+          setPage('dashboard');
         } catch (loadError) { notify(loadError.message || 'No pudimos cargar tus experiencias.'); setPage('welcome'); }
       }
       if (alive) setAuthReady(true);
@@ -129,8 +129,8 @@ function App() {
           await acceptPendingInvite(session.user);
           const loaded = await loadCloudState(session.user);
           if (!alive) return;
-          if (loaded) { hydrateCloudState(loaded, session.user); setPage(!loaded.experience?.id ? 'outings' : 'dashboard'); }
-          else setPage('outings');
+          if (loaded) hydrateCloudState(loaded, session.user);
+          setPage('dashboard');
         } catch (error) { notify(error.message || 'No pudimos abrir esta invitación.'); setPage('friends'); }
       }, 0);
     });
@@ -229,7 +229,7 @@ function App() {
     const demo = loadDemoState();
     saveDemoState(demo);
     setState(demo);
-    setPage(!demo.experience?.id ? 'outings' : 'dashboard');
+    setPage('dashboard');
     notify('Tu espacio está listo en este dispositivo.');
   };
 
@@ -237,7 +237,7 @@ function App() {
     if (!supabaseConfigured) {
       if (import.meta.env.PROD) { notify('El acceso a CHIPPA todavía se está preparando.'); return; }
       const next = authMode === 'login' ? loadDemoState() : createEmptyState({ id: `local-${crypto.randomUUID()}`, name: form.name.trim(), avatar: form.avatar || avatars[0] });
-      setCloudUser(null); setState(next); saveDemoState(next); setPage('outings');
+      setCloudUser(null); setState(next); saveDemoState(next); setPage('dashboard');
       return;
     }
     setBusy(true);
@@ -250,7 +250,8 @@ function App() {
         setUser(authUser);
         await acceptPendingInvite(authUser);
         const loaded = await loadCloudState(authUser);
-        if (loaded) { hydrateCloudState(loaded, authUser); setPage(!loaded.experience?.id ? 'outings' : 'dashboard'); } else setPage('outings');
+        if (loaded) hydrateCloudState(loaded, authUser);
+        setPage('dashboard');
       }
     } catch (error) { notify(error.message || 'No pudimos continuar. Revisa tus datos.'); }
     finally { setBusy(false); }
@@ -391,8 +392,7 @@ function App() {
       {state.mode === 'demo' && import.meta.env.DEV && <div className="local-storage-notice"><span>ⓘ</span> Los cambios de esta vista se guardan en este dispositivo.</div>}
       {page === 'friends' && <FriendsPage key={`${currentUser.id}:${friendsVersion}`} person={currentUser} state={state} social={social.ownerId === currentUser.id ? social : { connections: [], requests: [], meetings: [] }} loading={friendsLoading} error={friendsError} onRefresh={() => refreshFriends().catch(() => {})} onNewMeeting={newMeetingWith} onOpenMeeting={selectExperience} onToast={notify} />}
       {page === 'outings' && <OutingsPage outings={outingEntries} activeId={state.experience?.id} onCreate={openNewOuting} onSelect={selectExperience} />}
-      {page === 'dashboard' && !state.experience?.id && <main className="content"><EmptyFriends title="Tu próxima salida empieza aquí." text="Crea un plan para ti y, si quieres, invita a un amigo después." action="Planear una salida" onClick={openNewOuting} /></main>}
-      {page === 'dashboard' && state.experience?.id && <Dashboard premiumActive={premiumActive} state={state} currentUser={currentUser} partner={partner} onOpen={openModule} onPage={changePage} onPremium={showPremiumNotice} onCreate={openNewOuting} />}
+      {page === 'dashboard' && <Dashboard premiumActive={premiumActive} state={state} currentUser={currentUser} partner={partner} outings={outingEntries} onSelectOuting={selectExperience} onOpen={openModule} onPage={changePage} onPremium={showPremiumNotice} onCreate={openNewOuting} />}
       {page === 'games' && <GamesHub premiumActive={premiumActive} key={gamesFilter} initialFilter={gamesFilter} state={state} onOpen={openModule} onBack={() => setPage('dashboard')} />}
       {page === 'module' && <ExperienceModule
         key={`${state.experience.id}:${moduleId}:${state.activeUserId}`} moduleId={moduleId} state={state} update={update} updateMember={updateMember}
@@ -509,10 +509,43 @@ function MobileNav({ premiumActive, page, setPage, openGames, friendRequestCount
   })}</nav>;
 }
 
-function Dashboard({ premiumActive, state, currentUser, partner, onOpen, onPage, onPremium, onCreate }) {
+function Dashboard({ premiumActive, state, currentUser, partner, outings = [], onSelectOuting, onOpen, onPage, onPremium, onCreate }) {
   const grouped = groupOrder.map((group) => ({ group, items: modules.filter((item) => item.group === group) })).filter((entry) => entry.items.length);
   const doneCount = modules.filter((item) => activityStatus(state, item.id)).length;
+  const hasActiveOuting = Boolean(state.experience?.id);
+  const quickAccess = [
+    { title: 'Amigos', detail: 'Conecta y organiza algo juntos', icon: 'friends', target: 'friends', enabled: true },
+    { title: 'Juegos', detail: 'Retos para compartir', icon: 'games', target: 'games', enabled: hasActiveOuting },
+    { title: 'Nuestra cita', detail: 'Vuelve a tus momentos', icon: 'moment', target: 'moment', enabled: hasActiveOuting },
+    { title: 'Respuestas', detail: 'Revisa lo que guardaste', icon: 'results', target: 'results', enabled: hasActiveOuting },
+    { title: 'Pasaporte', detail: 'Mira tus recuerdos CHIPPA', icon: 'passport', target: 'passport', enabled: hasActiveOuting }
+  ];
   return <main className="content dashboard-content">
+    <section className="home-outings-dashboard" aria-labelledby="home-outings-title">
+      <header className="home-outings-heading">
+        <div><div className="eyebrow">TU ESPACIO CHIPPA <span>✦</span></div><h1 id="home-outings-title">Tus salidas de un vistazo.</h1><p>Encuentra tus planes y vuelve r&aacute;pidamente a lo que quieres hacer.</p></div>
+        <div className="home-outings-actions"><button className="home-create-button" onClick={onCreate}>＋ Crear salida</button><button className="home-all-outings" onClick={() => onPage('outings')}>Ver todas <span>→</span></button></div>
+      </header>
+      <div className="home-outings-grid">
+        <section className="home-outings-panel" aria-labelledby="home-recent-title">
+          <div className="home-panel-heading"><div><span className="home-panel-icon"><SidebarIcon name="outings" /></span><div><h2 id="home-recent-title">Salidas recientes</h2><p>{outings.length} {outings.length === 1 ? 'plan guardado' : 'planes guardados'}</p></div></div><button onClick={() => onPage('outings')} aria-label="Ver todas las salidas">Ver lista <span>→</span></button></div>
+          {outings.length ? <div className="home-recent-list">{outings.slice(0, 4).map((outing) => {
+            const active = outing.id === state.experience?.id;
+            return <button className={`home-recent-outing ${active ? 'active' : ''}`} key={outing.id} onClick={() => onSelectOuting(outing.id)} aria-current={active ? 'true' : undefined}>
+              <span className="home-recent-mark"><ExperienceMark value={outing.emoji} fallback="✦" /></span><span className="home-recent-copy"><small>{active ? 'SALIDA ACTUAL' : 'SALIDA GUARDADA'}</small><b>{outing.title || 'Una nueva salida'}</b><span>{outing.place || 'Lugar por definir'} · {labelDate(outing.date)}</span></span><span className="home-recent-arrow" aria-hidden="true">↗</span>
+            </button>;
+          })}</div> : <div className="home-outings-empty"><span className="home-empty-art"><SidebarIcon name="outings" /></span><div><b>Tu primera salida empieza aqu&iacute;.</b><p>Arma un plan para ti. Invitar a un amigo es opcional.</p></div><button onClick={onCreate}>Planear mi primera salida <span>→</span></button></div>}
+          {outings.length > 4 && <button className="home-more-outings" onClick={() => onPage('outings')}>Ver las {outings.length - 4} salidas restantes <span>→</span></button>}
+        </section>
+        <section className="home-quick-panel" aria-labelledby="home-quick-title">
+          <div className="home-panel-heading"><div><span className="home-panel-spark">✦</span><div><h2 id="home-quick-title">Accesos r&aacute;pidos</h2><p>Ve directo a una secci&oacute;n</p></div></div></div>
+          <div className="home-quick-grid">{quickAccess.map((item, index) => <button className={`home-quick-link quick-tone-${index % 5}`} key={item.target} disabled={!item.enabled} title={!item.enabled ? 'Crea una salida para empezar' : undefined} onClick={() => item.target === 'moment' ? onOpen('moment') : onPage(item.target)}>
+            <span className="home-quick-icon"><SidebarIcon name={item.icon} /></span><span className="home-quick-copy"><b>{item.title}</b><small>{item.enabled ? item.detail : 'Crea una salida para empezar'}</small></span><span className="home-quick-arrow" aria-hidden="true">↗</span>
+          </button>)}</div>
+        </section>
+      </div>
+    </section>
+    {hasActiveOuting && <>
     <div className="dashboard-kicker"><span>CAPÍTULO 01</span><i /> <span>{labelDate(state.experience?.date)}</span></div>
     <section className="dashboard-hero">
       <div className="dashboard-hero-copy">
@@ -531,6 +564,7 @@ function Dashboard({ premiumActive, state, currentUser, partner, onOpen, onPage,
       <div className="activity-groups">{grouped.map(({ group, items }, index) => <div className={`activity-group ${group === 'Juegos' ? 'activity-group-games' : ''}`} key={group}><div className="group-heading"><span className={`group-index index-${index}`}>0{index + 1}</span><h3>{group}</h3><i /></div><div className={`activity-grid ${items.length === 1 ? 'single-card' : ''}`}>{items.map((item) => <ActivityCard premiumActive={premiumActive} key={item.id} item={item} state={state} onOpen={onOpen} />)}</div></div>)}</div>
     </section>
     <section className="story-progress"><div className="progress-icon">✦</div><div><small>{partner ? 'SU HISTORIA EN CONSTRUCCIÓN' : 'TU HISTORIA EN CONSTRUCCIÓN'}</small><b>{doneCount} de {modules.length} actividades con timbre CHIPPA</b><div className="progress-track"><span style={{ width: `${Math.min(100, doneCount / modules.length * 100)}%` }} /></div></div><button onClick={() => onPage('capsule')}>Ver cápsula <span>→</span></button></section>
+    </>}
   </main>;
 }
 
