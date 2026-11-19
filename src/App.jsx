@@ -372,7 +372,7 @@ function App() {
   const pendingFriendRequests = social.ownerId === currentUser.id ? (social.requests || []).filter((request) => request.recipientId === currentUser.id && request.status === 'pending').length : 0;
 
   return <div className="app-shell">
-    <Sidebar premiumActive={premiumActive} page={page} moduleId={moduleId} setPage={changePage} openModule={openModule} state={state} friendRequestCount={pendingFriendRequests} />
+    <Sidebar premiumActive={premiumActive} page={page} moduleId={moduleId} setPage={changePage} openModule={openModule} friendRequestCount={pendingFriendRequests} />
     <div className="app-main">
       <header className="topbar">
         <button className="mobile-brand" onClick={() => setPage('dashboard')} aria-label="Ir al inicio de Chippa"><img src="/assets/chippa/brand.png" alt="CHIPPA" /></button>
@@ -483,9 +483,9 @@ function AuthPage({ mode, setMode, onSubmit, onBack, onLegal, busy, cloud }) {
   </section><LegalFooter className="auth-legal-footer" onOpen={onLegal} /></main>;
 }
 
-function Sidebar({ premiumActive, page, moduleId, setPage, openModule, state, friendRequestCount = 0 }) {
+function Sidebar({ premiumActive, page, moduleId, setPage, openModule, friendRequestCount = 0 }) {
   const quick = [ ['moment', 'Nuestra cita', 'moment'], ['same', 'Juegos', 'games'], ['letters', 'Cartas', 'letters'], ['next', 'Aventuras', 'adventures'] ];
-  return <aside className="sidebar"><button className="sidebar-brand" onClick={() => setPage('dashboard')} aria-label="Ir al inicio de Chippa"><Brand /></button><div className="experience-chip"><span><ExperienceMark value={state.experience?.emoji} /></span><div><b>{state.experience?.title || 'Tu espacio en CHIPPA'}</b><small>{state.experience?.place || 'Conecta con tus amigos'}</small></div><span className="chip-dots">···</span></div>
+  return <aside className="sidebar"><button className="sidebar-brand" onClick={() => setPage('dashboard')} aria-label="Ir al inicio de Chippa"><Brand /></button>
     <div className="side-label">LA HISTORIA</div><button className={`side-link ${page === 'dashboard' ? 'active' : ''}`} onClick={() => setPage('dashboard')}><SidebarIcon name="home" /> Inicio</button>
     <button className={`side-link ${page === 'friends' ? 'active' : ''}`} onClick={() => setPage('friends')}><SidebarIcon name="friends" /> Amigos{friendRequestCount > 0 && <i className="friend-nav-badge" aria-label={`${friendRequestCount} solicitudes pendientes`}>{friendRequestCount}</i>}</button>
     <div className="side-label spaced">EXPLORAR</div>{quick.map(([id, title, emoji]) => {

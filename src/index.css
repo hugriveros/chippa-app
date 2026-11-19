@@ -155,15 +155,9 @@ textarea { resize: vertical; line-height: 1.7; }
 
 .app-shell { min-height: 100vh; display: flex; background: #fcf8f5; }
 .sidebar { width: 245px; flex: 0 0 245px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; padding: 24px 15px 18px; border-right: 1px solid #eee6e9; background: #fffaf8; }
-.sidebar-brand { width: 100%; display: flex; border: 0; padding: 0 10px 25px; background: none; cursor: pointer; }
+.sidebar-brand { width: 100%; display: flex; border: 0; padding: 0 10px 16px; background: none; cursor: pointer; }
 .sidebar-brand .brand-lockup { font-size: 27px; }
 .sidebar-brand .brand-mark { width: 26px; height: 26px; font-size: 21px; }
-.experience-chip { min-height: 58px; margin: 0 2px 23px; padding: 8px 9px; display: flex; align-items: center; gap: 9px; border: 1px solid #f0e4eb; border-radius: 13px; background: white; }
-.experience-chip > span:first-child { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: #fde7f1; font-size: 19px; }
-.experience-chip div { flex: 1; min-width: 0; display: grid; gap: 4px; }
-.experience-chip b { overflow: hidden; color: #554958; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
-.experience-chip small { overflow: hidden; color: #9a8e99; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
-.chip-dots { color: #aa9aaa; letter-spacing: 2px; }
 .side-label { margin: 0 10px 8px; color: #a69ba6; font-size: 8px; font-weight: 800; letter-spacing: .16em; }
 .side-label.spaced { margin-top: 21px; }
 .side-link { width: 100%; height: 38px; display: flex; align-items: center; gap: 11px; border: 0; border-radius: 10px; padding: 0 10px; background: transparent; color: #756b77; text-align: left; font-size: 10px; font-weight: 700; transition: background .15s, color .15s; }
@@ -672,8 +666,7 @@ textarea { resize: vertical; line-height: 1.7; }
 }
 .app-shell .eyebrow { color: #594764; font-size: 10px; }
 .app-shell .side-label { color: #705c78; font-size: 10px; }
-.app-shell .experience-chip b { color: #392d40; font-size: 11px; }
-.app-shell .experience-chip small, .app-shell .sidebar-foot { color: #665a6c; font-size: 10px; }
+.app-shell .sidebar-foot { color: #665a6c; font-size: 10px; }
 .app-shell .side-link { min-height: 44px; height: auto; font-size: 12px; color: #51435b; }
 .app-shell .side-link:hover, .app-shell .side-link.active { color: #9e0c5b; background: #f9d7e9; }
 .app-shell .side-link > span:first-child { font-size: 17px; }
@@ -811,9 +804,6 @@ textarea { resize: vertical; line-height: 1.7; }
 .app-shell .activity-info small { font-size: 11px; }
 .app-shell .mobile-nav { border-top-color: #cc8db4; background: rgba(255,250,253,.98); box-shadow: 0 -5px 20px rgba(67,35,75,.1); }
 .app-shell .mobile-nav button.active { color: #fff; background: #c91169; }
-.app-shell .experience-chip { border-color: #c33183; background: linear-gradient(125deg,#e91577,#944cc1 65%,#148bab); box-shadow: 0 6px 16px rgba(136,28,115,.2); }
-.app-shell .experience-chip b, .app-shell .experience-chip small, .app-shell .experience-chip .chip-dots { color: #fff; }
-.app-shell .experience-chip > span:first-child { display: grid; place-items: center; width: 36px; height: 36px; flex: 0 0 36px; border-radius: 12px; background: rgba(255,255,255,.92); }
 .app-shell .side-label { color: #73326f; }
 .app-shell .side-link.active { color: #fff; background: linear-gradient(105deg,#dc176f,#9946ba); box-shadow: 0 5px 12px rgba(170,28,117,.24); }
 .app-shell .side-link.active > i { color: #fff; opacity: .9; }
