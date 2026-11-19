@@ -377,7 +377,6 @@ function App() {
       <header className="topbar">
         <button className="mobile-brand" onClick={() => setPage('dashboard')} aria-label="Ir al inicio de Chippa"><img src="/assets/chippa/brand.png" alt="CHIPPA" /></button>
         {state.mode === 'demo' && import.meta.env.DEV && <span className="mode-pill"><span /> Solo este dispositivo</span>}
-        {state.mode === 'cloud' && <span className="mode-pill cloud-pill"><span /> Cuenta sincronizada</span>}
         <button className="membership-button" onClick={() => showPremiumNotice('subscription')}>{premiumActive ? '✓ Premium activo' : '✦ Premium'}</button><div className="profile-wrap">
           {state.mode === 'demo' && import.meta.env.DEV && partner && <button className="switch-profile" onClick={() => update((previous) => ({ ...previous, activeUserId: previous.participants.find((person) => person.id !== previous.activeUserId)?.id || previous.activeUserId }))} title="Cambiar participante">↔ <span>Ver como {partner?.name}</span></button>}
           <button className="profile-button" onClick={() => setProfileMenu((open) => !open)} aria-expanded={profileMenu}><span className="avatar-sm"><Avatar value={currentUser.avatar} /></span><span className="profile-name">{currentUser.name}</span><span>⌄</span></button>
