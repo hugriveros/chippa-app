@@ -62,6 +62,7 @@ function App() {
   const localPreview = import.meta.env.DEV && !supabaseConfigured;
   const [page, setPage] = useState('welcome');
   const [moduleId, setModuleId] = useState('moment');
+  const [activityReturnPage, setActivityReturnPage] = useState('dashboard');
   const { state, setState, update, updateMember, setCloudUser, hydrateCloudState, syncError, clearSyncError } = useAppState();
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(!supabaseConfigured);
@@ -299,24 +300,26 @@ function App() {
   };
 
   const selectExperience = async (experienceId) => {
-    const requestedId = experienceId == null ? '' : String(experienceId);
+    const requestedId = String(experienceId ?? '');
     if (!requestedId || openingExperienceId) return;
-    setShowExperienceMenu(false);
-    if (String(state.experience?.id || '') === requestedId) { setPage('dashboard'); return; }
+    if (String(state.experience?.id ?? '') === requestedId) {
+      setPage('outing-detail');
+      return;
+    }
     if (state.mode === 'cloud') {
       setOpeningExperienceId(requestedId);
       let timeoutId;
       try {
-        if (!user?.id) throw new Error('Inicia sesion nuevamente para abrir esta salida.');
+        if (!user?.id) throw new Error('Inicia sesión nuevamente para abrir esta salida.');
         const selected = await Promise.race([
           loadCloudState(user, requestedId),
-          new Promise((_, reject) => { timeoutId = window.setTimeout(() => reject(new Error('La salida esta tardando demasiado. Comprueba tu conexion e intenta otra vez.')), 15000); })
+          new Promise((_, reject) => { timeoutId = window.setTimeout(() => reject(new Error('La salida está tardando demasiado. Comprueba tu conexión e intenta otra vez.')), 15000); })
         ]);
-        if (String(selected?.experience?.id || '') !== requestedId) throw new Error('No encontramos esa salida en tu cuenta. Actualiza la lista e intenta otra vez.');
+        if (String(selected?.experience?.id ?? '') !== requestedId) throw new Error('No encontramos esa salida en tu cuenta. Actualiza la lista e intenta otra vez.');
         hydrateCloudState(selected, user);
-        setPage('dashboard');
+        setPage('outing-detail');
       }
-      catch (error) { notify(error.message || 'No pudimos abrir esa experiencia.'); }
+      catch (error) { notify(error.message || 'No pudimos abrir esa salida.'); }
       finally { window.clearTimeout(timeoutId); setOpeningExperienceId(''); }
       return;
     }
@@ -326,11 +329,9 @@ function App() {
       const archives = previous.experienceArchives || [];
       const previousOuting = previous.experience?.id ? { experience: previous.experience, memberData: previous.memberData, shared: previous.shared, participants: previous.participants } : null;
       const rest = archives.filter((entry) => String(entry?.experience?.id || '') !== requestedId);
-      const next = { ...previous, ...selected, participants: selected.participants || previous.participants, experienceArchives: [...(previousOuting ? [previousOuting] : []), ...rest] };
-      saveDemoState(next);
-      return next;
+      return { ...previous, ...selected, participants: selected.participants || previous.participants, experienceArchives: [...(previousOuting ? [previousOuting] : []), ...rest] };
     });
-    setPage('dashboard');
+    setPage('outing-detail');
   };
 
 
@@ -369,14 +370,21 @@ function App() {
     if (next === 'friends') setFriendsVersion((version) => version + 1);
     if (!state.experience?.id && !['friends','dashboard','outings'].includes(next)) { setPage('outings'); notify('Crea una salida para empezar.'); return; }
     if (next === 'games') setGamesFilter('Todos');
+    if (['games', 'results', 'capsule', 'passport'].includes(next)) {
+      setActivityReturnPage(page === 'outing-detail' ? 'outing-detail' : 'dashboard');
+    }
     if (!premiumActive && next === 'capsule' && modules.some((item) => item.id === 'capsule' && item.premium)) { showPremiumNotice(); return; }
     setPage(next); setProfileMenu(false);
   };
   const openModule = (id) => {
     if (!state.experience?.id) { setPage('outings'); notify('Crea una salida para empezar.'); return; }
+    if (page === 'outing-detail' || page === 'dashboard' || page === 'outings' || page === 'friends') {
+      setActivityReturnPage(page === 'outing-detail' ? 'outing-detail' : 'dashboard');
+    }
     if (!premiumActive && modules.some((item) => item.id === id && item.premium)) { showPremiumNotice(id); return; }
     setModuleId(id); setPage('module');
   };
+  const backFromActivity = () => setPage(activityReturnPage);
 
   if (!authReady) return <div className="loading-screen"><span className="spinner" /> Preparando tu pasaporte…</div>;
   if (!supabaseConfigured && import.meta.env.PROD) return <LaunchSetupPage onLegal={setLegalDocument} legalDocument={legalDocument} />;
@@ -406,15 +414,16 @@ function App() {
       {state.mode === 'demo' && import.meta.env.DEV && <div className="local-storage-notice"><span>ⓘ</span> Los cambios de esta vista se guardan en este dispositivo.</div>}
       {page === 'friends' && <FriendsPage key={`${currentUser.id}:${friendsVersion}`} person={currentUser} state={state} social={social.ownerId === currentUser.id ? social : { connections: [], requests: [], meetings: [] }} loading={friendsLoading} error={friendsError} onRefresh={() => refreshFriends().catch(() => {})} onNewMeeting={newMeetingWith} onOpenMeeting={selectExperience} onToast={notify} />}
       {page === 'outings' && <OutingsPage outings={outingEntries} activeId={state.experience?.id} openingExperienceId={openingExperienceId} onCreate={openNewOuting} onSelect={selectExperience} />}
-      {page === 'dashboard' && <Dashboard premiumActive={premiumActive} state={state} currentUser={currentUser} partner={partner} outings={outingEntries} onSelectOuting={selectExperience} onOpen={openModule} onPage={changePage} onPremium={showPremiumNotice} onCreate={openNewOuting} />}
-      {page === 'games' && <GamesHub premiumActive={premiumActive} key={gamesFilter} initialFilter={gamesFilter} state={state} onOpen={openModule} onBack={() => setPage('dashboard')} />}
+      {page === 'dashboard' && <Dashboard premiumActive={premiumActive} state={state} currentUser={currentUser} partner={partner} outings={outingEntries} openingExperienceId={openingExperienceId} onSelectOuting={selectExperience} onOpen={openModule} onPage={changePage} onCreate={openNewOuting} />}
+      {page === 'outing-detail' && state.experience?.id && <OutingDetail key={state.experience.id} premiumActive={premiumActive} state={state} onBack={() => changePage('outings')} onOpen={openModule} onPage={changePage} />}
+      {page === 'games' && <GamesHub premiumActive={premiumActive} key={gamesFilter} initialFilter={gamesFilter} state={state} onOpen={openModule} onBack={backFromActivity} backLabel={activityReturnPage === 'outing-detail' ? 'Volver a la salida' : undefined} />}
       {page === 'module' && <ExperienceModule
         key={`${state.experience.id}:${moduleId}:${state.activeUserId}`} moduleId={moduleId} state={state} update={update} updateMember={updateMember}
         currentUser={currentUser} partner={partner} currentMember={currentMember}
-        onBack={() => setPage(modules.find((item) => item.id === moduleId)?.group === 'Juegos' ? 'games' : 'dashboard')} onNavigate={openModule} onToast={notify} />}
-      {page === 'results' && <ResultsPage state={state} onOpen={openModule} onBack={() => setPage('dashboard')} update={update} />}
-      {page === 'capsule' && <ExperienceModule moduleId="capsule" state={state} update={update} updateMember={updateMember} currentUser={currentUser} partner={partner} currentMember={currentMember} onBack={() => setPage('dashboard')} onToast={notify} />}
-      {page === 'passport' && <ExperienceModule moduleId="passport" state={state} update={update} updateMember={updateMember} currentUser={currentUser} partner={partner} currentMember={currentMember} onBack={() => setPage('dashboard')} onToast={notify} />}
+        onBack={() => modules.find((item) => item.id === moduleId)?.group === 'Juegos' ? setPage('games') : backFromActivity()} onNavigate={openModule} onToast={notify} />}
+      {page === 'results' && <ResultsPage state={state} onOpen={openModule} onBack={backFromActivity} update={update} />}
+      {page === 'capsule' && <ExperienceModule moduleId="capsule" state={state} update={update} updateMember={updateMember} currentUser={currentUser} partner={partner} currentMember={currentMember} onBack={backFromActivity} onToast={notify} />}
+      {page === 'passport' && <ExperienceModule moduleId="passport" state={state} update={update} updateMember={updateMember} currentUser={currentUser} partner={partner} currentMember={currentMember} onBack={backFromActivity} onToast={notify} />}
       {showExperienceForm && <ExperienceForm friend={meetingFriend} friends={social.connections || []} onClose={() => { setShowExperienceForm(false); setMeetingFriend(null); }} onSubmit={createExperience} busy={busy} />}
       <MobileNav premiumActive={premiumActive} page={page} setPage={changePage} openGames={() => changePage('games')} friendRequestCount={pendingFriendRequests} />
       <LegalFooter className="app-legal-footer" onOpen={setLegalDocument} />
@@ -501,7 +510,7 @@ function Sidebar({ premiumActive, page, moduleId, setPage, openModule, friendReq
   const quick = [ ['moment', 'Nuestra cita', 'moment'], ['same', 'Juegos', 'games'], ['letters', 'Cartas', 'letters'], ['next', 'Aventuras', 'adventures'] ];
   return <aside className="sidebar"><button className="sidebar-brand" onClick={() => setPage('dashboard')} aria-label="Ir al inicio de Chippa"><Brand /></button>
     <div className="side-label">LA HISTORIA</div><button className={`side-link ${page === 'dashboard' ? 'active' : ''}`} onClick={() => setPage('dashboard')}><SidebarIcon name="home" /> Inicio</button>
-    <button className={`side-link ${page === 'outings' ? 'active' : ''}`} onClick={() => setPage('outings')}><SidebarIcon name="outings" /> Salidas</button>
+    <button className={`side-link ${page === 'outings' || page === 'outing-detail' ? 'active' : ''}`} onClick={() => setPage('outings')}><SidebarIcon name="outings" /> Salidas</button>
     <button className={`side-link ${page === 'friends' ? 'active' : ''}`} onClick={() => setPage('friends')}><SidebarIcon name="friends" /> Amigos{friendRequestCount > 0 && <i className="friend-nav-badge" aria-label={`${friendRequestCount} solicitudes pendientes`}>{friendRequestCount}</i>}</button>
     <div className="side-label spaced">EXPLORAR</div>{quick.map(([id, title, emoji]) => {
       const premium = !premiumActive && id !== 'same' && modules.some((item) => item.id === id && item.premium);
@@ -523,9 +532,7 @@ function MobileNav({ premiumActive, page, setPage, openGames, friendRequestCount
   })}</nav>;
 }
 
-function Dashboard({ premiumActive, state, currentUser, partner, outings = [], onSelectOuting, onOpen, onPage, onPremium, onCreate }) {
-  const grouped = groupOrder.map((group) => ({ group, items: modules.filter((item) => item.group === group) })).filter((entry) => entry.items.length);
-  const doneCount = modules.filter((item) => activityStatus(state, item.id)).length;
+function Dashboard({ premiumActive, state, currentUser, partner, outings = [], openingExperienceId, onSelectOuting, onOpen, onPage, onCreate }) {
   const hasActiveOuting = Boolean(state.experience?.id);
   const quickAccess = [
     { title: 'Amigos', detail: 'Conecta y organiza algo juntos', icon: 'friends', target: 'friends', enabled: true },
@@ -545,8 +552,8 @@ function Dashboard({ premiumActive, state, currentUser, partner, outings = [], o
           <div className="home-panel-heading"><div><span className="home-panel-icon"><SidebarIcon name="outings" /></span><div><h2 id="home-recent-title">Salidas recientes</h2><p>{outings.length} {outings.length === 1 ? 'plan guardado' : 'planes guardados'}</p></div></div><button onClick={() => onPage('outings')} aria-label="Ver todas las salidas">Ver lista <span>→</span></button></div>
           {outings.length ? <div className="home-recent-list">{outings.slice(0, 4).map((outing) => {
             const active = outing.id === state.experience?.id;
-            return <button className={`home-recent-outing ${active ? 'active' : ''}`} key={outing.id} onClick={() => onSelectOuting(outing.id)} aria-current={active ? 'true' : undefined}>
-              <span className="home-recent-mark"><ExperienceMark value={outing.emoji} fallback="✦" /></span><span className="home-recent-copy"><small>{active ? 'SALIDA ACTUAL' : 'SALIDA GUARDADA'}</small><b>{outing.title || 'Una nueva salida'}</b><span>{outing.place || 'Lugar por definir'} · {labelDate(outing.date)}</span></span><span className="home-recent-arrow" aria-hidden="true">↗</span>
+            return <button type="button" className={`home-recent-outing ${active ? 'active' : ''}`} key={outing.id} onClick={() => onSelectOuting(outing.id)} aria-current={active ? 'true' : undefined} aria-busy={openingExperienceId === outing.id || undefined} disabled={Boolean(openingExperienceId)}>
+              <span className="home-recent-mark"><ExperienceMark value={outing.emoji} fallback="✦" /></span><span className="home-recent-copy"><small>{openingExperienceId === outing.id ? 'ABRIENDO…' : active ? 'SALIDA ACTUAL' : 'SALIDA GUARDADA'}</small><b>{outing.title || 'Una nueva salida'}</b><span>{outing.place || 'Lugar por definir'} · {labelDate(outing.date)}</span></span><span className="home-recent-arrow" aria-hidden="true">↗</span>
             </button>;
           })}</div> : <div className="home-outings-empty"><span className="home-empty-art"><SidebarIcon name="outings" /></span><div><b>Tu primera salida empieza aqu&iacute;.</b><p>Arma un plan para ti. Invitar a un amigo es opcional.</p></div><button onClick={onCreate}>Planear mi primera salida <span>→</span></button></div>}
           {outings.length > 4 && <button className="home-more-outings" onClick={() => onPage('outings')}>Ver las {outings.length - 4} salidas restantes <span>→</span></button>}
@@ -574,12 +581,81 @@ function Dashboard({ premiumActive, state, currentUser, partner, outings = [], o
       <span className="hero-doodle doodle-one">✧</span><span className="hero-doodle doodle-two">♡</span>
     </section>
     <section className="experience-strip"><div className="experience-meta"><span className="meta-icon"><img src="/assets/chippa/map-icon.png" alt="" /></span><div><small>LUGAR DE LA SALIDA</small><b>{state.experience?.place || 'Lugar por agregar'}</b></div></div><div className="meta-divider" /><div className="experience-meta"><span className="meta-icon"><img src="/assets/chippa/calendar-check-transparent.png" alt="" /></span><div><small>FECHA</small><b>{labelDate(state.experience?.date)}</b></div></div><div className="meta-divider" /><div className="experience-meta"><span className="meta-icon"><img src="/assets/chippa/chat-bubble.png" alt="" /></span><div><small>{partner ? 'ACOMPAÑANTES' : 'PLAN PERSONAL'}</small><b>{partner ? 'Salida compartida' : 'Solo para ti'}</b></div></div><button className="strip-action" onClick={partner ? onCreate : () => onPage('friends')}>{partner ? 'Nueva salida →' : 'Conectar con un amigo →'}</button></section>
-    <section className="activity-section"><div className="section-heading"><div><div className="eyebrow">ELIGE POR DÓNDE SEGUIR</div><h2>Hay muchas formas de continuar.</h2></div><div className="dashboard-action-links"><button className="all-activities" onClick={() => onPage('results')}>Ver resultados <span>↗</span></button><button className="all-activities outing-list-link" onClick={() => onPage('outings')}>Ver todas las salidas <span>→</span></button></div></div>
-      <div className="activity-groups">{grouped.map(({ group, items }, index) => <div className={`activity-group ${group === 'Juegos' ? 'activity-group-games' : ''}`} key={group}><div className="group-heading"><span className={`group-index index-${index}`}>0{index + 1}</span><h3>{group}</h3><i /></div><div className={`activity-grid ${items.length === 1 ? 'single-card' : ''}`}>{items.map((item) => <ActivityCard premiumActive={premiumActive} key={item.id} item={item} state={state} onOpen={onOpen} />)}</div></div>)}</div>
-    </section>
-    <section className="story-progress"><div className="progress-icon">✦</div><div><small>{partner ? 'SU HISTORIA EN CONSTRUCCIÓN' : 'TU HISTORIA EN CONSTRUCCIÓN'}</small><b>{doneCount} de {modules.length} actividades con timbre CHIPPA</b><div className="progress-track"><span style={{ width: `${Math.min(100, doneCount / modules.length * 100)}%` }} /></div></div><button onClick={() => onPage('capsule')}>Ver cápsula <span>→</span></button></section>
+    <OutingActivities premiumActive={premiumActive} state={state} onOpen={onOpen} onPage={onPage} showOutingsLink />
     </>}
   </main>;
+}
+
+function OutingDetail({ premiumActive, state, onBack, onOpen, onPage }) {
+  const titleRef = useRef(null);
+  const { experience, participants } = state;
+  const isShared = participants.length > 1;
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    titleRef.current?.focus({ preventScroll: true });
+  }, []);
+
+  return <main className="content outing-detail" aria-labelledby="outing-detail-title">
+    <button type="button" className="back-link" onClick={onBack}>← Volver a mis salidas</button>
+    <header className="outings-heading outing-detail-heading">
+      <span className="outing-mark" aria-hidden="true"><ExperienceMark value={experience.emoji} fallback="✦" /></span>
+      <div>
+        <h1 ref={titleRef} id="outing-detail-title" tabIndex={-1}>{experience.title}</h1>
+        {experience.description?.trim() && <p>{experience.description}</p>}
+      </div>
+    </header>
+    <dl className="outing-detail-meta">
+      <div><dt>Lugar</dt><dd>{experience.place || 'Lugar por definir'}</dd></div>
+      <div><dt>Fecha</dt><dd><time dateTime={experience.date}>{labelDate(experience.date)}</time></dd></div>
+      <div>
+        <dt>{isShared ? 'Participantes' : 'Plan personal'}</dt>
+        <dd>{isShared ? <ul>
+          {participants.map((person) => <li key={person.id}>
+            <span className="avatar-sm"><Avatar value={person.avatar} /></span>
+            {person.name}
+          </li>)}
+        </ul> : 'Solo para ti'}</dd>
+      </div>
+    </dl>
+    <OutingActivities premiumActive={premiumActive} state={state} onOpen={onOpen} onPage={onPage} />
+  </main>;
+}
+
+function OutingActivities({ premiumActive, state, onOpen, onPage, showOutingsLink = false }) {
+  const grouped = groupOrder.map((group) => ({ group, items: modules.filter((item) => item.group === group) })).filter((entry) => entry.items.length);
+  const doneCount = modules.filter((item) => activityStatus(state, item.id)).length;
+  return <>
+    <section className="activity-section">
+      <div className="section-heading">
+        <div>
+          {showOutingsLink && <div className="eyebrow">ELIGE POR DÓNDE SEGUIR</div>}
+          <h2>{showOutingsLink ? 'Hay muchas formas de continuar.' : 'Actividades de la salida'}</h2>
+        </div>
+        <div className="dashboard-action-links">
+          <button className="all-activities" onClick={() => onPage('results')}>Ver resultados <span>↗</span></button>
+          {showOutingsLink && <button className="all-activities outing-list-link" onClick={() => onPage('outings')}>Ver todas las salidas <span>→</span></button>}
+        </div>
+      </div>
+      <div className="activity-groups">
+        {grouped.map(({ group, items }, index) => <div className={`activity-group ${group === 'Juegos' ? 'activity-group-games' : ''}`} key={group}>
+          <div className="group-heading"><span className={`group-index index-${index}`}>0{index + 1}</span><h3>{group}</h3><i /></div>
+          <div className={`activity-grid ${items.length === 1 ? 'single-card' : ''}`}>
+            {items.map((item) => <ActivityCard premiumActive={premiumActive} key={item.id} item={item} state={state} onOpen={onOpen} />)}
+          </div>
+        </div>)}
+      </div>
+    </section>
+    <section className="story-progress">
+      <div className="progress-icon">✦</div>
+      <div>
+        <small>{state.participants.length > 1 ? 'SU HISTORIA EN CONSTRUCCIÓN' : 'TU HISTORIA EN CONSTRUCCIÓN'}</small>
+        <b>{doneCount} de {modules.length} actividades con timbre CHIPPA</b>
+        <div className="progress-track"><span style={{ width: `${Math.min(100, doneCount / modules.length * 100)}%` }} /></div>
+      </div>
+      <button onClick={() => onPage('capsule')}>Ver cápsula <span>→</span></button>
+    </section>
+  </>;
 }
 
 function OutingsPage({ outings, activeId, openingExperienceId, onCreate, onSelect }) {
