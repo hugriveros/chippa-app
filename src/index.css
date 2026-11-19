@@ -728,7 +728,8 @@ textarea { resize: vertical; line-height: 1.7; }
 .outing-details b { overflow: hidden; color: #34233e; font: 600 21px/1.15 'Fredoka',sans-serif; text-overflow: ellipsis; white-space: nowrap; }
 .outing-details > span { color: #5d4d63; font-size: 13px; }
 .outing-row time { color: #4d4054; font-size: 12px; font-weight: 700; }
-.outing-open { display: inline-flex; align-items: center; gap: 9px; color: #a20e60; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.outing-open { display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 9px 12px; border: 1px solid #e6bad5; border-radius: 999px; background: #fff2f8; color: #a20e60; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.outing-open:hover:not(:disabled) { border-color: #d41470; background: #fbd4e7; color: #7f0e55; }
 .outing-open i { font-size: 18px; font-style: normal; }
 .outing-form-card .outing-companion-control > span { display: inline; color: #75657a; font-size: 11px; font-weight: 600; }
 .outing-form-card .meeting-with-friend { color: #46354e; font-size: 13px; }

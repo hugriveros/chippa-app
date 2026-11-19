@@ -299,28 +299,33 @@ function App() {
   };
 
   const selectExperience = async (experienceId) => {
-    if (!experienceId || openingExperienceId) return;
+    const requestedId = experienceId == null ? '' : String(experienceId);
+    if (!requestedId || openingExperienceId) return;
     setShowExperienceMenu(false);
-    if (state.experience?.id === experienceId) { setPage('dashboard'); return; }
+    if (String(state.experience?.id || '') === requestedId) { setPage('dashboard'); return; }
     if (state.mode === 'cloud') {
-      setOpeningExperienceId(experienceId);
+      setOpeningExperienceId(requestedId);
+      let timeoutId;
       try {
         if (!user?.id) throw new Error('Inicia sesion nuevamente para abrir esta salida.');
-        const selected = await loadCloudState(user, experienceId);
-        if (selected?.experience?.id !== experienceId) throw new Error('No encontramos esa salida en tu cuenta. Actualiza la lista e intenta otra vez.');
+        const selected = await Promise.race([
+          loadCloudState(user, requestedId),
+          new Promise((_, reject) => { timeoutId = window.setTimeout(() => reject(new Error('La salida esta tardando demasiado. Comprueba tu conexion e intenta otra vez.')), 15000); })
+        ]);
+        if (String(selected?.experience?.id || '') !== requestedId) throw new Error('No encontramos esa salida en tu cuenta. Actualiza la lista e intenta otra vez.');
         hydrateCloudState(selected, user);
         setPage('dashboard');
       }
       catch (error) { notify(error.message || 'No pudimos abrir esa experiencia.'); }
-      finally { setOpeningExperienceId(''); }
+      finally { window.clearTimeout(timeoutId); setOpeningExperienceId(''); }
       return;
     }
-    const selected = (state.experienceArchives || []).find((entry) => entry.experience?.id === experienceId);
+    const selected = (state.experienceArchives || []).find((entry) => String(entry?.experience?.id || '') === requestedId);
     if (!selected) { notify('No encontramos esa salida guardada. Actualiza la lista e intenta otra vez.'); return; }
     setState((previous) => {
       const archives = previous.experienceArchives || [];
       const previousOuting = previous.experience?.id ? { experience: previous.experience, memberData: previous.memberData, shared: previous.shared, participants: previous.participants } : null;
-      const rest = archives.filter((entry) => entry.experience?.id !== experienceId);
+      const rest = archives.filter((entry) => String(entry?.experience?.id || '') !== requestedId);
       const next = { ...previous, ...selected, participants: selected.participants || previous.participants, experienceArchives: [...(previousOuting ? [previousOuting] : []), ...rest] };
       saveDemoState(next);
       return next;
@@ -584,13 +589,13 @@ function OutingsPage({ outings, activeId, openingExperienceId, onCreate, onSelec
     {!outings.length ? <EmptyFriends title="Todavía no tienes salidas." text="Crea un plan para ti. Invitar a otra persona es opcional y puedes hacerlo más adelante." action="Crear mi primera salida" onClick={onCreate} /> : <div className="outings-list">
       {outings.map((outing, index) => {
         const active = outing.id === activeId;
-        return <button type="button" className={`outing-row ${active ? 'active' : ''}`} key={outing.id} onClick={() => onSelect(outing.id)} aria-current={active ? 'true' : undefined} aria-busy={openingExperienceId === outing.id || undefined} disabled={Boolean(openingExperienceId)}>
+        return <article className={`outing-row ${active ? 'active' : ''}`} key={outing.id} aria-current={active ? 'true' : undefined}>
           <span className="outing-index">{String(index + 1).padStart(2, '0')}</span>
           <span className="outing-mark"><ExperienceMark value={outing.emoji} fallback="✦" /></span>
           <span className="outing-details"><small>{active ? 'SALIDA ACTUAL' : 'SALIDA GUARDADA'}</small><b>{outing.title}</b><span>{outing.place}</span></span>
           <time dateTime={outing.date}>{labelDate(outing.date)}</time>
-          <span className="outing-open">{openingExperienceId === outing.id ? 'Abriendo...' : active ? 'Abrir' : 'Ver salida'} <i>→</i></span>
-        </button>;
+          <button type="button" className="outing-open" onClick={() => onSelect(outing.id)} aria-label={`${active ? 'Abrir' : 'Ver'} salida ${outing.title}`} aria-busy={openingExperienceId === outing.id || undefined} disabled={Boolean(openingExperienceId)}>{openingExperienceId === outing.id ? 'Abriendo...' : active ? 'Abrir' : 'Ver salida'} <i aria-hidden="true">→</i></button>
+        </article>;
       })}
     </div>}
   </main>;
