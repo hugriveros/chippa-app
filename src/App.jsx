@@ -54,6 +54,17 @@ function SidebarIcon({ name }) {
   return <span className={`sidebar-icon-box sidebar-icon-${name}`} aria-hidden="true"><svg viewBox="0 0 40 40" focusable="false">{artwork[name]}</svg></span>;
 }
 
+function HomeQuickIcon({ name }) {
+  const artwork = {
+    outings: <><rect x="8" y="10" width="24" height="22" rx="5" fill="#fff" stroke="#284a60" strokeWidth="2" /><path d="M14 7v6M26 7v6M9 16h22" stroke="#1686f5" strokeWidth="2.5" strokeLinecap="round" /><path d="M14 21h4M22 21h4M14 26h4" stroke="#284a60" strokeWidth="2" strokeLinecap="round" /><circle cx="28" cy="25" r="2.2" fill="#f2bd3f" /></>,
+    friends: <><circle cx="13" cy="14" r="4" fill="#f2bd3f" stroke="#fff" strokeWidth="1.5" /><circle cx="25" cy="13" r="4" fill="#38a2b2" stroke="#fff" strokeWidth="1.5" /><path d="M5 31c.6-5 3.4-8 8-8s7.4 3 8 8v2H5v-2Z" fill="#fff" stroke="#284a60" strokeWidth="1.5" /><path d="M19 31c.5-5 2.8-8 6-8 4.5 0 7.3 3 8 8v2H19v-2Z" fill="#d9ecff" stroke="#284a60" strokeWidth="1.5" /><path d="m31 7 .8 1.6 1.7.3-1.2 1.2.3 1.8-1.6-.9-1.6.9.3-1.8-1.2-1.2 1.7-.3.8-1.6Z" fill="#fff" /></>,
+    capsule: <><rect x="6" y="12" width="28" height="20" rx="5" fill="#fff" stroke="#284a60" strokeWidth="2" /><path d="m12 12 2-4h7l2 4" fill="#f2bd3f" stroke="#284a60" strokeWidth="1.5" strokeLinejoin="round" /><circle cx="21" cy="22" r="7" fill="#d9ecff" stroke="#1686f5" strokeWidth="2.5" /><circle cx="21" cy="22" r="3.5" fill="#e91577" /><circle cx="29" cy="17" r="1.5" fill="#64ad43" /></>,
+    passport: <><path d="M11 6h17a3 3 0 0 1 3 3v23H14a4 4 0 0 1-4-4V8a2 2 0 0 1 1-2Z" fill="#1686f5" stroke="#284a60" strokeWidth="1.5" /><path d="M14 7v24" stroke="#f2bd3f" strokeWidth="3" /><circle cx="23" cy="18" r="6" fill="#fff" stroke="#f2bd3f" strokeWidth="1.5" /><path d="M18 18h10M23 12c-3 3-3 9 0 12m0-12c3 3 3 9 0 12" fill="none" stroke="#167c80" strokeWidth="1.2" strokeLinecap="round" /><path d="M18 27h9" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" /></>
+  };
+  if (!artwork[name]) return <SidebarIcon name={name} />;
+  return <svg className="home-quick-svg" viewBox="0 0 40 40" aria-hidden="true" focusable="false">{artwork[name]}</svg>;
+}
+
 function App() {
   const localPreview = import.meta.env.DEV && !supabaseConfigured;
   const [page, setPage] = useState('welcome');
@@ -570,20 +581,20 @@ function Dashboard({ state, currentUser, partner, outings = [], openingExperienc
       </header>
       <div className="home-outings-grid">
         <section className="home-outings-panel" aria-labelledby="home-recent-title">
-          <div className="home-panel-heading"><div><span className="home-panel-icon"><SidebarIcon name="outings" /></span><div><h2 id="home-recent-title">Salidas recientes</h2><p>{outings.length} {outings.length === 1 ? 'plan guardado' : 'planes guardados'}</p></div></div><button onClick={() => onPage('outings')} aria-label="Ver todas las salidas">Ver lista <span>→</span></button></div>
+          <div className="home-panel-heading"><div><span className="home-panel-icon"><HomeQuickIcon name="outings" /></span><div><h2 id="home-recent-title">Salidas recientes</h2><p>{outings.length} {outings.length === 1 ? 'plan guardado' : 'planes guardados'}</p></div></div><button onClick={() => onPage('outings')} aria-label="Ver todas las salidas">Ver lista <span>→</span></button></div>
           {outings.length ? <div className="home-recent-list">{outings.slice(0, 4).map((outing) => {
             const active = outing.id === state.experience?.id;
             return <button type="button" className={`home-recent-outing ${active ? 'active' : ''}`} key={outing.id} onClick={() => onSelectOuting(outing.id)} aria-current={active ? 'true' : undefined} aria-busy={openingExperienceId === outing.id || undefined} disabled={Boolean(openingExperienceId)}>
               <span className="home-recent-mark"><ExperienceMark value={outing.emoji} fallback="✦" /></span><span className="home-recent-copy"><small>{openingExperienceId === outing.id ? 'ABRIENDO…' : active ? 'SALIDA ACTUAL' : 'SALIDA GUARDADA'}</small><b>{outing.title || 'Una nueva salida'}</b><span>{outing.place || 'Lugar por definir'} · {labelDate(outing.date)}</span></span><span className="home-recent-arrow" aria-hidden="true">↗</span>
             </button>;
-          })}</div> : <div className="home-outings-empty"><span className="home-empty-art"><SidebarIcon name="outings" /></span><div><b>Tu primera salida empieza aqu&iacute;.</b><p>Arma un plan para ti. Invitar a un amigo es opcional.</p></div><button onClick={onCreate}>Planear mi primera salida <span>→</span></button></div>}
+          })}</div> : <div className="home-outings-empty"><span className="home-empty-art"><HomeQuickIcon name="outings" /></span><div><b>Tu primera salida empieza aqu&iacute;.</b><p>Arma un plan para ti. Invitar a un amigo es opcional.</p></div><button onClick={onCreate}>Planear mi primera salida <span>→</span></button></div>}
           {outings.length > 4 && <button className="home-more-outings" onClick={() => onPage('outings')}>Ver las {outings.length - 4} salidas restantes <span>→</span></button>}
         </section>
         <section className="home-quick-panel" aria-labelledby="home-quick-title">
           <div className="home-panel-heading"><div><span className="home-panel-spark">✦</span><div><h2 id="home-quick-title">Accesos r&aacute;pidos</h2><p>Ve directo a una secci&oacute;n</p></div></div></div>
           <div className="home-quick-grid">
             {navigationItems.slice(1).map(({ target, icon, label }, index) => <button type="button" className={`home-quick-link quick-tone-${index}`} key={target} onClick={() => onPage(target)}>
-              <span className="home-quick-icon"><SidebarIcon name={icon} /></span>
+              <span className="home-quick-icon"><HomeQuickIcon name={icon} /></span>
               <span className="home-quick-copy"><b>{label}</b><small>{quickDetails[target]}</small></span>
               <span className="home-quick-arrow" aria-hidden="true">↗</span>
             </button>)}
