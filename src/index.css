@@ -1059,6 +1059,6 @@ textarea { resize: vertical; line-height: 1.7; }
 .app-shell .story-progress { border-color: #d5ae2e; background: linear-gradient(110deg,#245e70,#327b80 62%,#4b7666); box-shadow: 0 7px 18px rgba(39,78,91,.16); }
 .app-shell .story-progress > button { border: 0; border-radius: 999px; padding: 10px 14px; background: #d41470; color: white; box-shadow: 0 3px 0 #a90d59; }
 .app-shell .story-progress > button:hover { background: #ed3187; }
-.app-shell .outing-mark, .app-shell .home-recent-mark { border: 2px solid #1686f5; background: #fff; box-shadow: 0 4px 0 #b8dcff; }
+.app-shell .outing-mark, .app-shell .home-recent-mark { border: 2px solid #005bff; background: #fff; box-shadow: 0 4px 0 #b8dcff; }
 .app-shell .games-intro { border-color: #315f78; background: linear-gradient(112deg,#245e70 0%,#327b80 58%,#527b75 100%); }
 
