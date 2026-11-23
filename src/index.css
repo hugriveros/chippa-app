@@ -1026,7 +1026,7 @@ textarea { resize: vertical; line-height: 1.7; }
 .app-shell .experience-menu { border-color: #b8cece; }
 .app-shell .experience-menu > button.active { background: linear-gradient(110deg,#e0eeec,#e7eef3); }
 .app-shell .experience-menu .new-experience-option { color: #176e78; }
-.app-shell .home-outings-dashboard { border-color: #00a4ed; background: linear-gradient(128deg,#dff2ff 0%,#d8eaff 55%,#e2f4fa 100%); box-shadow: 0 9px 23px rgba(43,87,92,.1); }
+.app-shell .home-outings-dashboard { border-color: #00a4ed; background: #fff; box-shadow: 0 9px 23px rgba(43,87,92,.1); }
 .app-shell .home-outings-heading .eyebrow { color: #287477; }
 .home-create-button, .home-outings-empty > button { background: #d41470; box-shadow: 0 4px 0 #a90d59; }
 .home-create-button:hover, .home-outings-empty > button:hover { background: #ed3187; }
