@@ -996,26 +996,27 @@ textarea { resize: vertical; line-height: 1.7; }
 .app-shell .result-n-3 { background: #d39231; }
 .app-shell .module-panel { border-color: #00a4ed; background-image: linear-gradient(145deg,#fff 0%,#f8faf8 62%,#eaf2ef 100%); box-shadow: 0 7px 18px rgba(43,87,92,.08); }
 .app-shell .module-panel .eyebrow { color: #287477; }
-.app-shell .capsule-intro { background: linear-gradient(105deg,#edf4f1,#e8f0f3); }
+.app-shell .passport-details .module-panel { background-image: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); }
+.app-shell .capsule-intro { background: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); }
 .app-shell .capsule-doodle { background: #cfe2e3; box-shadow: 0 5px 0 #b5cecf; }
 .app-shell .capsule-doodle span { color: #d2942f; }
-.app-shell .capsule-composer { background: #fbfcf8; }
+.app-shell .capsule-composer { background: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); }
 .app-shell .capsule-toolbar .layout-switch button.active { background: #e5f0ef; color: #176e78; }
 .app-shell .capsule-memory { border-color: #00a4ed; }
-.app-shell .capsule-memory:nth-child(2n) { background: #fffdf5; }
-.app-shell .capsule-memory:nth-child(3n) { background: #f4f8f6; }
+.app-shell .capsule-memory:nth-child(2n) { background: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); }
+.app-shell .capsule-memory:nth-child(3n) { background: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); }
 .app-shell .passport-stats b { color: #287477; }
-.app-shell .stamp { border-color: #00a4ed; background: #eef5f3; }
-.app-shell .stamp-1 { border-color: #00a4ed; background: #edf5e8; }
-.app-shell .stamp-2 { border-color: #00a4ed; background: #fff4df; }
-.app-shell .stamp-3 { border-color: #00a4ed; background: #eaf3f7; }
-.app-shell .stamp-4 { border-color: #00a4ed; background: #fbf3d8; }
+.app-shell .stamp { border-color: #00a4ed; background: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); }
+.app-shell .stamp-1 { border-color: #00a4ed; background: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); }
+.app-shell .stamp-2 { border-color: #00a4ed; background: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); }
+.app-shell .stamp-3 { border-color: #00a4ed; background: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); }
+.app-shell .stamp-4 { border-color: #00a4ed; background: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); }
 .app-shell .passport-entry > span:first-child { background: #e7f0ee; }
-.app-shell .experience-strip { border-color: #00a4ed; background: linear-gradient(110deg,#fff 8%,#e9f2ef 100%); box-shadow: 0 5px 18px rgba(43,87,92,.08); }
+.app-shell .experience-strip { border-color: #00a4ed; background: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); box-shadow: 0 5px 18px rgba(43,87,92,.08); }
 .app-shell .meta-icon { background: linear-gradient(135deg,#287d82,#477ca0); }
 .app-shell .outing-row { border-color: #00a4ed; border-left-color: #00a4ed; box-shadow: 0 7px 18px rgba(43,87,92,.08); }
 .app-shell .outing-row:hover { border-color: #00a4ed; box-shadow: 0 10px 24px rgba(43,87,92,.14); }
-.app-shell .outing-row.active { border-color: #00a4ed; border-left-color: #00a4ed; background: linear-gradient(105deg,#dcecef,#f4f5e9 72%,#f8f0d7); }
+.app-shell .outing-row.active { border-color: #00a4ed; border-left-color: #00a4ed; background: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); }
 .app-shell .outing-index { color: #287477; }
 .app-shell .outing-mark { background: linear-gradient(140deg,#287d82,#477ca0); box-shadow: 0 4px 0 #1c6570; }
 .app-shell .outing-details small { color: #64556c; }
