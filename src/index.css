@@ -994,56 +994,56 @@ textarea { resize: vertical; line-height: 1.7; }
 .app-shell .result-n-1 { background: #4c789e; }
 .app-shell .result-n-2 { background: #558b68; }
 .app-shell .result-n-3 { background: #d39231; }
-.app-shell .module-panel { border-color: #d5ae2e; background-image: linear-gradient(145deg,#fff 0%,#f8faf8 62%,#eaf2ef 100%); box-shadow: 0 7px 18px rgba(43,87,92,.08); }
+.app-shell .module-panel { border-color: #00a4ed; background-image: linear-gradient(145deg,#fff 0%,#f8faf8 62%,#eaf2ef 100%); box-shadow: 0 7px 18px rgba(43,87,92,.08); }
 .app-shell .module-panel .eyebrow { color: #287477; }
 .app-shell .capsule-intro { background: linear-gradient(105deg,#edf4f1,#e8f0f3); }
 .app-shell .capsule-doodle { background: #cfe2e3; box-shadow: 0 5px 0 #b5cecf; }
 .app-shell .capsule-doodle span { color: #d2942f; }
 .app-shell .capsule-composer { background: #fbfcf8; }
 .app-shell .capsule-toolbar .layout-switch button.active { background: #e5f0ef; color: #176e78; }
-.app-shell .capsule-memory { border-color: #d5ae2e; }
+.app-shell .capsule-memory { border-color: #00a4ed; }
 .app-shell .capsule-memory:nth-child(2n) { background: #fffdf5; }
 .app-shell .capsule-memory:nth-child(3n) { background: #f4f8f6; }
 .app-shell .passport-stats b { color: #287477; }
-.app-shell .stamp { border-color: #d5ae2e; background: #eef5f3; }
-.app-shell .stamp-1 { border-color: #d5ae2e; background: #edf5e8; }
-.app-shell .stamp-2 { border-color: #d5ae2e; background: #fff4df; }
-.app-shell .stamp-3 { border-color: #d5ae2e; background: #eaf3f7; }
-.app-shell .stamp-4 { border-color: #d5ae2e; background: #fbf3d8; }
+.app-shell .stamp { border-color: #00a4ed; background: #eef5f3; }
+.app-shell .stamp-1 { border-color: #00a4ed; background: #edf5e8; }
+.app-shell .stamp-2 { border-color: #00a4ed; background: #fff4df; }
+.app-shell .stamp-3 { border-color: #00a4ed; background: #eaf3f7; }
+.app-shell .stamp-4 { border-color: #00a4ed; background: #fbf3d8; }
 .app-shell .passport-entry > span:first-child { background: #e7f0ee; }
-.app-shell .experience-strip { border-color: #d5ae2e; background: linear-gradient(110deg,#fff 8%,#e9f2ef 100%); box-shadow: 0 5px 18px rgba(43,87,92,.08); }
+.app-shell .experience-strip { border-color: #00a4ed; background: linear-gradient(110deg,#fff 8%,#e9f2ef 100%); box-shadow: 0 5px 18px rgba(43,87,92,.08); }
 .app-shell .meta-icon { background: linear-gradient(135deg,#287d82,#477ca0); }
-.app-shell .outing-row { border-color: #d5ae2e; border-left-color: #d5ae2e; box-shadow: 0 7px 18px rgba(43,87,92,.08); }
-.app-shell .outing-row:hover { border-color: #c49a20; box-shadow: 0 10px 24px rgba(43,87,92,.14); }
-.app-shell .outing-row.active { border-color: #c49a20; border-left-color: #c49a20; background: linear-gradient(105deg,#dcecef,#f4f5e9 72%,#f8f0d7); }
+.app-shell .outing-row { border-color: #00a4ed; border-left-color: #00a4ed; box-shadow: 0 7px 18px rgba(43,87,92,.08); }
+.app-shell .outing-row:hover { border-color: #00a4ed; box-shadow: 0 10px 24px rgba(43,87,92,.14); }
+.app-shell .outing-row.active { border-color: #00a4ed; border-left-color: #00a4ed; background: linear-gradient(105deg,#dcecef,#f4f5e9 72%,#f8f0d7); }
 .app-shell .outing-index { color: #287477; }
 .app-shell .outing-mark { background: linear-gradient(140deg,#287d82,#477ca0); box-shadow: 0 4px 0 #1c6570; }
 .app-shell .outing-details small { color: #287477; }
 .app-shell .outing-open { border-color: #e6bad5; background: #fff2f8; color: #a20e60; }
 .app-shell .outing-open:hover:not(:disabled) { border-color: #d41470; background: #fbd4e7; color: #7f0e55; }
-.app-shell .outing-detail-meta > div { border-color: #d5ae2e; }
+.app-shell .outing-detail-meta > div { border-color: #00a4ed; }
 .app-shell .outing-detail-meta dt, .app-shell .outing-detail .activity-section .all-activities { color: #287477; }
 .app-shell .experience-menu { border-color: #b8cece; }
 .app-shell .experience-menu > button.active { background: linear-gradient(110deg,#e0eeec,#e7eef3); }
 .app-shell .experience-menu .new-experience-option { color: #176e78; }
-.app-shell .home-outings-dashboard { border-color: #00a4ed; background: #fff; box-shadow: 0 9px 23px rgba(43,87,92,.1); }
+.app-shell .home-outings-dashboard { border-color: #00a4ed; background: linear-gradient(128deg,#dff2ff 0%,#d8eaff 55%,#e2f4fa 100%); box-shadow: 0 9px 23px rgba(43,87,92,.1); }
 .app-shell .home-outings-heading .eyebrow { color: #287477; }
 .home-create-button, .home-outings-empty > button { background: #d41470; box-shadow: 0 4px 0 #a90d59; }
 .home-create-button:hover, .home-outings-empty > button:hover { background: #ed3187; }
 .home-all-outings, .home-panel-heading > div + button, .home-more-outings { color: #a20e60; }
 .app-shell .home-outings-panel, .app-shell .home-quick-panel { border-color: #00a4ed; box-shadow: 0 5px 14px rgba(43,87,92,.07); }
 .home-panel-icon, .home-empty-art { background: linear-gradient(140deg,#287d82,#477ca0); }
-.home-recent-outing { border-color: #d5ae2e; border-left-color: #d5ae2e; }
-.home-recent-outing:hover { border-color: #c49a20; box-shadow: 0 5px 12px rgba(43,87,92,.1); }
-.home-recent-outing.active { border-color: #c49a20; border-left-color: #c49a20; background: linear-gradient(105deg,#e2efed,#edf3ef 68%,#f7f1dc); }
+.home-recent-outing { border-color: #00a4ed; border-left-color: #00a4ed; }
+.home-recent-outing:hover { border-color: #00a4ed; box-shadow: 0 5px 12px rgba(43,87,92,.1); }
+.home-recent-outing.active { border-color: #00a4ed; border-left-color: #00a4ed; background: linear-gradient(105deg,#e2efed,#edf3ef 68%,#f7f1dc); }
 .home-recent-mark { background: linear-gradient(140deg,#287d82,#477ca0); box-shadow: 0 3px 0 #1c6570; }
 .home-recent-copy small, .home-recent-arrow { color: #287477; }
-.home-outings-empty { border-color: #d5ae2e; background: linear-gradient(115deg,#f4f8f5,#edf3f1); }
-.quick-tone-0 { background: #dceceb; border-color: #d5ae2e; }
-.quick-tone-1 { background: #dfebf2; border-color: #d5ae2e; }
-.quick-tone-2 { background: #e7eee1; border-color: #d5ae2e; }
-.quick-tone-3 { background: #fff0cd; border-color: #d5ae2e; }
-.quick-tone-4 { background: #f8e8d9; border-color: #d5ae2e; }
+.home-outings-empty { border-color: #00a4ed; background: linear-gradient(115deg,#f4f8f5,#edf3f1); }
+.quick-tone-0 { background: #dceceb; border-color: #00a4ed; }
+.quick-tone-1 { background: #dfebf2; border-color: #00a4ed; }
+.quick-tone-2 { background: #e7eee1; border-color: #00a4ed; }
+.quick-tone-3 { background: #fff0cd; border-color: #00a4ed; }
+.quick-tone-4 { background: #f8e8d9; border-color: #00a4ed; }
 .home-quick-icon { background: #287d82; box-shadow: 0 3px 0 rgba(30,83,89,.2); }
 .quick-tone-1 .home-quick-icon { background: #477ca0; }
 .quick-tone-2 .home-quick-icon { background: #62885b; }
@@ -1057,10 +1057,10 @@ textarea { resize: vertical; line-height: 1.7; }
 .app-shell .activity-card, .app-shell .play-card, .app-shell .friend-card, .app-shell .friend-request-card,
 .app-shell .outgoing-requests article, .app-shell .friend-profile-result, .app-shell .friend-meeting,
 .app-shell .friend-timeline > article, .app-shell .friend-summary article, .app-shell .invitation-list > article,
-.app-shell .result-tile, .app-shell .module-panel, .app-shell .capsule-memory { border-color: #d5ae2e; }
-.app-shell .result-tile { border-left-color: #d5ae2e; }
-.app-shell .play-card:hover { border-color: #c49a20; }
-.app-shell .story-progress { border-color: #d5ae2e; background: linear-gradient(110deg,#245e70,#327b80 62%,#4b7666); box-shadow: 0 7px 18px rgba(39,78,91,.16); }
+.app-shell .result-tile, .app-shell .module-panel, .app-shell .capsule-memory { border-color: #00a4ed; }
+.app-shell .result-tile { border-left-color: #00a4ed; }
+.app-shell .play-card:hover { border-color: #00a4ed; }
+.app-shell .story-progress { border-color: #00a4ed; background: linear-gradient(110deg,#245e70,#327b80 62%,#4b7666); box-shadow: 0 7px 18px rgba(39,78,91,.16); }
 .app-shell .story-progress > button { border: 0; border-radius: 999px; padding: 10px 14px; background: #d41470; color: white; box-shadow: 0 3px 0 #a90d59; }
 .app-shell .story-progress > button:hover { background: #ed3187; }
 .app-shell .outing-mark, .app-shell .home-recent-mark { border: 0; background: #fff; box-shadow: none; }

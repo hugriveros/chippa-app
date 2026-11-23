@@ -56,13 +56,13 @@
 /* Saturated CHIPPA cards for the authenticated app workspace. */
 .app-shell .play-card { border-width: 1.5px; box-shadow: 0 6px 0 rgba(74,37,90,.14), 0 12px 22px rgba(86,38,93,.11), inset 0 1px 0 rgba(255,255,255,.55); }
 .app-shell .play-card::before { background: linear-gradient(145deg,rgba(255,255,255,.24),transparent 47%,rgba(63,27,74,.08)); }
-.app-shell .play-card:hover { border-color: #772b83; box-shadow: 0 9px 0 rgba(74,37,90,.12), 0 18px 28px rgba(86,38,93,.18); }
-.app-shell .play-card.tone-lilac { border-color: #8954bd; background: linear-gradient(145deg,#b97ee9,#d6a5ef); }
-.app-shell .play-card.tone-pink { border-color: #ce3e82; background: linear-gradient(145deg,#f15b9c,#ff9dc4); }
-.app-shell .play-card.tone-sky { border-color: #278eae; background: linear-gradient(145deg,#42b3d4,#9ce1ee); }
-.app-shell .play-card.tone-butter { border-color: #c48716; background: linear-gradient(145deg,#ffc33f,#ffdf76); }
-.app-shell .play-card.tone-peach { border-color: #ce6349; background: linear-gradient(145deg,#f17b58,#ffb183); }
-.app-shell .play-card.tone-mint { border-color: #579b37; background: linear-gradient(145deg,#7fbe4d,#b9e47c); }
+.app-shell .play-card:hover { border-color: #00a4ed; box-shadow: 0 9px 0 rgba(74,37,90,.12), 0 18px 28px rgba(86,38,93,.18); }
+.app-shell .play-card.tone-lilac { border-color: #00a4ed; background: linear-gradient(145deg,#b97ee9,#d6a5ef); }
+.app-shell .play-card.tone-pink { border-color: #00a4ed; background: linear-gradient(145deg,#f15b9c,#ff9dc4); }
+.app-shell .play-card.tone-sky { border-color: #00a4ed; background: linear-gradient(145deg,#42b3d4,#9ce1ee); }
+.app-shell .play-card.tone-butter { border-color: #00a4ed; background: linear-gradient(145deg,#ffc33f,#ffdf76); }
+.app-shell .play-card.tone-peach { border-color: #00a4ed; background: linear-gradient(145deg,#f17b58,#ffb183); }
+.app-shell .play-card.tone-mint { border-color: #00a4ed; background: linear-gradient(145deg,#7fbe4d,#b9e47c); }
 .app-shell .play-card-top { color: #483455; font-size: 9px; }
 .app-shell .play-access { border-color: rgba(255,255,255,.95); color: #2d6b39; background: #fff; font-size: 9px; box-shadow: 0 2px 7px rgba(54,35,63,.12); }
 .app-shell .play-access.paid { border-color: #8e5a20; color: #53340d; background: #ffe59a; }
