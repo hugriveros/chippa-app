@@ -1018,7 +1018,7 @@ textarea { resize: vertical; line-height: 1.7; }
 .app-shell .outing-row.active { border-color: #00a4ed; border-left-color: #00a4ed; background: linear-gradient(105deg,#dcecef,#f4f5e9 72%,#f8f0d7); }
 .app-shell .outing-index { color: #287477; }
 .app-shell .outing-mark { background: linear-gradient(140deg,#287d82,#477ca0); box-shadow: 0 4px 0 #1c6570; }
-.app-shell .outing-details small { color: #287477; }
+.app-shell .outing-details small { color: #64556c; }
 .app-shell .outing-open { border-color: #e6bad5; background: #fff2f8; color: #a20e60; }
 .app-shell .outing-open:hover:not(:disabled) { border-color: #d41470; background: #fbd4e7; color: #7f0e55; }
 .app-shell .outing-detail-meta > div { border-color: #00a4ed; }
@@ -1037,7 +1037,8 @@ textarea { resize: vertical; line-height: 1.7; }
 .home-recent-outing:hover { border-color: #00a4ed; box-shadow: 0 5px 12px rgba(43,87,92,.1); }
 .home-recent-outing.active { border-color: #00a4ed; border-left-color: #00a4ed; background: linear-gradient(105deg,#e2efed,#edf3ef 68%,#f7f1dc); }
 .home-recent-mark { background: linear-gradient(140deg,#287d82,#477ca0); box-shadow: 0 3px 0 #1c6570; }
-.home-recent-copy small, .home-recent-arrow { color: #287477; }
+.home-recent-copy small { color: #64556c; }
+.home-recent-arrow { color: #287477; }
 .home-outings-empty { border-color: #00a4ed; background: linear-gradient(115deg,#f4f8f5,#edf3f1); }
 .quick-tone-0 { background: #dceceb; border-color: #00a4ed; }
 .quick-tone-1 { background: #dfebf2; border-color: #00a4ed; }
