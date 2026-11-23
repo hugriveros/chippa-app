@@ -734,7 +734,7 @@ textarea { resize: vertical; line-height: 1.7; }
 .outing-row.active { border-color: #d21470; border-left-color: #d21470; background: linear-gradient(100deg,#fff0f7,#fff 64%,#f4edff); }
 .outing-index { color: #8b3bb1; font: 600 18px 'Fredoka',sans-serif; }
 .outing-mark { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 17px; background: linear-gradient(140deg,#ed267f,#a43bc3); color: white; font-size: 24px; box-shadow: 0 4px 0 #bf277d; }
-.outing-mark .experience-mark-image { width: 36px; height: 36px; }
+.outing-mark .experience-mark-image, .outing-mark .outing-mark-camera { width: 36px; height: 36px; object-fit: contain; }
 .outing-details { display: grid; gap: 5px; min-width: 0; }
 .outing-details small { color: #b00b62; font-size: 10px; font-weight: 900; letter-spacing: .12em; }
 .outing-details b { overflow: hidden; color: #34233e; font: 600 21px/1.15 'Fredoka',sans-serif; text-overflow: ellipsis; white-space: nowrap; }
@@ -812,7 +812,7 @@ textarea { resize: vertical; line-height: 1.7; }
   .outing-row { min-height: 112px; grid-template-columns: 27px 44px minmax(0,1fr); gap: 10px; padding: 13px 12px; border-left-width: 5px; border-radius: 17px; }
   .outing-index { font-size: 14px; }
   .outing-mark { width: 42px; height: 42px; border-radius: 14px; font-size: 20px; }
-  .outing-mark .experience-mark-image { width: 30px; height: 30px; }
+  .outing-mark .experience-mark-image, .outing-mark .outing-mark-camera { width: 30px; height: 30px; }
   .outing-details { gap: 4px; }
   .outing-details small { font-size: 9px; }
   .outing-details b { font-size: 18px; }

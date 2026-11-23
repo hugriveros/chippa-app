@@ -701,7 +701,7 @@ function OutingsPage({ outings, activeId, openingExperienceId, onCreate, onSelec
         const active = outing.id === activeId;
         return <article className={`outing-row ${active ? 'active' : ''}`} key={outing.id} aria-current={active ? 'true' : undefined}>
           <span className="outing-index">{String(index + 1).padStart(2, '0')}</span>
-          <span className="outing-mark"><ExperienceMark value={outing.emoji} fallback="✦" /></span>
+          <span className="outing-mark">{active ? <img className="outing-mark-camera" src="/assets/chippa/camera-icon.png" alt="" /> : <ExperienceMark value={outing.emoji} fallback="✦" />}</span>
           <span className="outing-details"><small>{active ? 'SALIDA ACTUAL' : 'SALIDA GUARDADA'}</small><b>{outing.title}</b><span>{outing.place}</span></span>
           <time dateTime={outing.date}>{labelDate(outing.date)}</time>
           <button type="button" className="outing-open" onClick={() => onSelect(outing.id)} aria-label={`${active ? 'Abrir' : 'Ver'} salida ${outing.title}`} aria-busy={openingExperienceId === outing.id || undefined} disabled={Boolean(openingExperienceId)}>{openingExperienceId === outing.id ? 'Abriendo...' : active ? 'Abrir' : 'Ver salida'} <i aria-hidden="true">→</i></button>
