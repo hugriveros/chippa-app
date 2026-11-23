@@ -653,14 +653,14 @@ textarea { resize: vertical; line-height: 1.7; }
 
 /* App workspace: stronger Chippa colors and readable controls, kept off the landing page. */
 .app-shell {
-  --berry: #e91577;
-  --berry-dark: #bd0d60;
+  --berry: #167c80;
+  --berry-dark: #105b67;
   --muted: #66566c;
-  --lilac: #7650ca;
-  --sky: #159ec5;
-  --mint: #64ad43;
-  --butter: #f3bd2d;
-  --peach: #ef7146;
+  --lilac: #5276a5;
+  --sky: #38a2b2;
+  --mint: #71a768;
+  --butter: #f2bd3f;
+  --peach: #e77b47;
   color: #302338;
 }
 .app-shell .eyebrow { color: #594764; font-size: 10px; }
@@ -983,4 +983,87 @@ textarea { resize: vertical; line-height: 1.7; }
   .home-quick-copy b { font-size: 13px; }
   .home-quick-copy small { font-size: 9px; }
 }
+
+/* Unisex workspace palette: cool neutrals with distinct blue, green and golden accents. */
+.app-shell .primary-button { background: #167c80; box-shadow: 0 5px 0 #105b67, 0 11px 22px rgba(22,124,128,.2); }
+.app-shell .primary-button:hover { background: #20949a; box-shadow: 0 7px 0 #105b67, 0 13px 24px rgba(22,124,128,.24); }
+.app-shell .side-link:hover, .app-shell .side-link.active { color: #fff; background: linear-gradient(105deg,#176e78,#315f89); }
+.app-shell .side-link.active { box-shadow: 0 5px 12px rgba(25,92,111,.2); }
+.app-shell .sidebar-sticker { border-color: #4f8792; background: linear-gradient(125deg,#256f7b,#3d779c); color: #ffe18a; box-shadow: 0 7px 18px rgba(34,87,107,.2); }
+.app-shell .result-tile { border-color: #b9d0d3; border-left-color: #287d82; background: linear-gradient(110deg,#e8f1f1,#eef3f2 68%,#edf2e7); box-shadow: 0 6px 16px rgba(43,87,92,.1); }
+.app-shell .result-number { background: #287d82; color: white; }
+.app-shell .result-n-1 { background: #4c789e; }
+.app-shell .result-n-2 { background: #558b68; }
+.app-shell .result-n-3 { background: #d39231; }
+.app-shell .module-panel { border-color: #c4d4d2; background-image: linear-gradient(145deg,#fff 0%,#f8faf8 62%,#eaf2ef 100%); box-shadow: 0 7px 18px rgba(43,87,92,.08); }
+.app-shell .module-panel .eyebrow { color: #287477; }
+.app-shell .capsule-intro { background: linear-gradient(105deg,#edf4f1,#e8f0f3); }
+.app-shell .capsule-doodle { background: #cfe2e3; box-shadow: 0 5px 0 #b5cecf; }
+.app-shell .capsule-doodle span { color: #d2942f; }
+.app-shell .capsule-composer { background: #fbfcf8; }
+.app-shell .capsule-toolbar .layout-switch button.active { background: #e5f0ef; color: #176e78; }
+.app-shell .capsule-memory { border-color: #d2dfdc; }
+.app-shell .capsule-memory:nth-child(2n) { background: #fffdf5; }
+.app-shell .capsule-memory:nth-child(3n) { background: #f4f8f6; }
+.app-shell .passport-stats b { color: #287477; }
+.app-shell .stamp { border-color: #c7d9d8; background: #eef5f3; }
+.app-shell .stamp-1 { border-color: #bdd3b2; background: #edf5e8; }
+.app-shell .stamp-2 { border-color: #e4c99c; background: #fff4df; }
+.app-shell .stamp-3 { border-color: #bbd5e0; background: #eaf3f7; }
+.app-shell .stamp-4 { border-color: #dfc783; background: #fbf3d8; }
+.app-shell .passport-entry > span:first-child { background: #e7f0ee; }
+.app-shell .experience-strip { border-color: #a9c9c8; background: linear-gradient(110deg,#fff 8%,#e9f2ef 100%); box-shadow: 0 5px 18px rgba(43,87,92,.08); }
+.app-shell .meta-icon { background: linear-gradient(135deg,#287d82,#477ca0); }
+.app-shell .outing-row { border-color: #c6d7d7; border-left-color: #287d82; box-shadow: 0 7px 18px rgba(43,87,92,.08); }
+.app-shell .outing-row:hover { border-color: #5b9ca0; box-shadow: 0 10px 24px rgba(43,87,92,.14); }
+.app-shell .outing-row.active { border-color: #4d9698; border-left-color: #287d82; background: linear-gradient(105deg,#dcecef,#f4f5e9 72%,#f8f0d7); }
+.app-shell .outing-index { color: #287477; }
+.app-shell .outing-mark { background: linear-gradient(140deg,#287d82,#477ca0); box-shadow: 0 4px 0 #1c6570; }
+.app-shell .outing-details small { color: #287477; }
+.app-shell .outing-open { border-color: #b8d1d1; background: #eef5f3; color: #176e78; }
+.app-shell .outing-open:hover:not(:disabled) { border-color: #5b9ca0; background: #dceceb; color: #105b67; }
+.app-shell .outing-detail-meta > div { border-color: #c8d9d7; }
+.app-shell .outing-detail-meta dt, .app-shell .outing-detail .activity-section .all-activities { color: #287477; }
+.app-shell .experience-menu { border-color: #b8cece; }
+.app-shell .experience-menu > button.active { background: linear-gradient(110deg,#e0eeec,#e7eef3); }
+.app-shell .experience-menu .new-experience-option { color: #176e78; }
+.app-shell .home-outings-dashboard { border-color: #a8c5c7; background: linear-gradient(128deg,#e8f1ef 0%,#e7f0eb 54%,#f5efd9 100%); box-shadow: 0 9px 23px rgba(43,87,92,.1); }
+.app-shell .home-outings-heading .eyebrow { color: #287477; }
+.home-create-button, .home-outings-empty > button { background: #167c80; box-shadow: 0 4px 0 #105b67; }
+.home-create-button:hover, .home-outings-empty > button:hover { background: #20949a; }
+.home-all-outings, .home-panel-heading > div + button, .home-more-outings { color: #176e78; }
+.app-shell .home-outings-panel, .app-shell .home-quick-panel { border-color: #c0d4d2; box-shadow: 0 5px 14px rgba(43,87,92,.07); }
+.home-panel-icon, .home-empty-art { background: linear-gradient(140deg,#287d82,#477ca0); }
+.home-recent-outing { border-color: #d0dfdc; border-left-color: #44838a; }
+.home-recent-outing:hover { border-color: #5b9ca0; box-shadow: 0 5px 12px rgba(43,87,92,.1); }
+.home-recent-outing.active { border-color: #4d9698; border-left-color: #287d82; background: linear-gradient(105deg,#e2efed,#edf3ef 68%,#f7f1dc); }
+.home-recent-mark { background: linear-gradient(140deg,#287d82,#477ca0); box-shadow: 0 3px 0 #1c6570; }
+.home-recent-copy small, .home-recent-arrow { color: #287477; }
+.home-outings-empty { border-color: #adc9c5; background: linear-gradient(115deg,#f4f8f5,#edf3f1); }
+.quick-tone-0 { background: #dceceb; border-color: #91bcbb; }
+.quick-tone-1 { background: #dfebf2; border-color: #9ebdce; }
+.quick-tone-2 { background: #e7eee1; border-color: #b4c79d; }
+.quick-tone-3 { background: #fff0cd; border-color: #dec16e; }
+.quick-tone-4 { background: #f8e8d9; border-color: #dcb28e; }
+.home-quick-icon { background: #287d82; box-shadow: 0 3px 0 rgba(30,83,89,.2); }
+.quick-tone-1 .home-quick-icon { background: #477ca0; }
+.quick-tone-2 .home-quick-icon { background: #62885b; }
+.quick-tone-3 .home-quick-icon { background: #d2942f; }
+.quick-tone-4 .home-quick-icon { background: #c5744c; }
+.home-quick-arrow { color: #287477; }
+.app-shell .brand-lockup { color: #176e78; }
+.app-shell .brand-lockup sup { color: #d2942f; }
+.app-shell .brand-mark { background: #287d82; text-shadow: 1px 2px 0 #105b67; box-shadow: 2px 3px 0 #c9dfd8; }
+.app-shell .sidebar-icon-home { background: linear-gradient(145deg,#287d82,#24677c); }
+.app-shell .sidebar-icon-outings { background: linear-gradient(145deg,#477ca0,#285b7f); }
+.app-shell .sidebar-icon-friends { background: linear-gradient(145deg,#e0a333,#d8784f); }
+.app-shell .sidebar-icon-moment { background: linear-gradient(145deg,#5f956a,#36797a); }
+.app-shell .sidebar-icon-games { background: linear-gradient(145deg,#249db5,#3f75a2); }
+.app-shell .sidebar-icon-letters { background: linear-gradient(145deg,#d98253,#c4a344); }
+.app-shell .sidebar-icon-adventures { background: linear-gradient(145deg,#36a3a5,#3a7ba0); }
+.app-shell .sidebar-icon-results { background: linear-gradient(145deg,#638a5f,#bb9132); }
+.app-shell .sidebar-icon-capsule { background: linear-gradient(145deg,#257e83,#4188a0); }
+.app-shell .sidebar-icon-passport { background: linear-gradient(145deg,#c3912e,#d47344); }
+.app-shell .story-progress { border-color: #287477; background: linear-gradient(110deg,#245e70,#327b80 62%,#4b7666); box-shadow: 0 7px 18px rgba(39,78,91,.16); }
+.app-shell .games-intro { border-color: #315f78; background: linear-gradient(112deg,#245e70 0%,#327b80 58%,#527b75 100%); }
 

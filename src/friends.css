@@ -60,3 +60,46 @@
 }
 @media(max-width:900px) { .friends-grid { grid-template-columns: 1fr; }.friend-detail-hero .primary-button { margin-left: 0; } }
 @media(max-width:600px) { .friends-hero { padding: 25px 21px; gap: 12px; }.friends-hero h1 { font-size: 37px; }.friends-hero > img { width: 60px; height: 85px; margin: 0; }.friends-hero p { font-size: 11px; }.friends-toolbar { margin: 23px 0 17px; }.friends-toolbar input { max-width: 100%; }.friends-tabs button { padding: 0 13px; font-size: 10px; }.friend-card { padding: 19px 18px 45px; gap: 16px; }.friend-card > .avatar-image { width: 52px; height: 60px; }.friend-accept { flex-direction: column; padding: 21px; gap: 12px; }.friend-accept form { width: 100%; max-width: none; min-width: 0; }.friend-invite { padding: 23px 20px; }.friend-invite h2, .friends-empty h2 { font-size: 24px; }.friends-empty { padding: 30px 20px; }.friend-detail-hero { padding: 23px 19px; gap: 18px; }.friend-detail-hero > .avatar-image { width: 66px; height: 78px; }.friend-detail-hero h1 { font-size: 34px; }.friend-detail-hero .primary-button { width: 100%; }.friend-summary { gap: 8px; }.friend-summary article { padding: 14px 6px; }.friend-summary b { font-size: 25px; }.friend-summary span { font-size: 8px; }.friend-meeting { padding: 17px; gap: 13px; flex-wrap: wrap; }.friend-meeting b { font-size: 20px; }.friend-meeting i { padding-left: 70px; width: 100%; }.invitation-list article > div:last-child { flex-wrap: wrap; } }
+
+/* Friend and shared memory screens use the same blue-green and warm accent palette. */
+.app-shell .friends-hero, .app-shell .friend-detail-hero { box-shadow: 0 10px 26px rgba(39,78,91,.16); }
+.app-shell .friend-detail-hero { border-color: #315f78; background: linear-gradient(112deg,#245e70 0%,#327b80 58%,#527b75 100%); }
+.app-shell .friends-tabs { border-color: #d3dfdd; background: #edf2f0; }
+.app-shell .friends-tabs button { color: #687d7d; }
+.app-shell .friends-tabs button[aria-pressed=true] { color: #176e78; box-shadow: 0 2px 5px rgba(50,90,94,.13); }
+.app-shell .friends-tabs button span { color: #648d91; }
+.app-shell .friend-card { border-color: #cfddda; border-left-color: #287d82; box-shadow: 0 4px 0 rgba(52,96,91,.06); }
+.app-shell .friend-card:hover { box-shadow: 0 10px 20px rgba(52,96,91,.12); }
+.app-shell .friend-card b, .app-shell .friend-meeting b, .app-shell .friend-list-heading h2 { color: #304c53; }
+.app-shell .friend-card small, .app-shell .friend-request-copy small, .app-shell .friend-request-card > small, .app-shell .outgoing-requests article > small { color: #647a7d; }
+.app-shell .friend-card span > span, .app-shell .friend-request-copy, .app-shell .friend-request-empty, .app-shell .friend-invite > p { color: #5d7072; }
+.app-shell .friend-card i, .app-shell .friend-meeting i { color: #287477; }
+.app-shell .friends-empty { border-color: #b8cdca; background: #f4f8f6; }
+.app-shell .friends-empty h2, .app-shell .friend-accept h2, .app-shell .friend-invite h2, .app-shell .invitation-list h2 { color: #365a60; }
+.app-shell .friends-empty p, .app-shell .friend-accept p, .app-shell .friend-invite label > small { color: #687d7d; }
+.app-shell .friend-accept { background: #edf3f1; }
+.app-shell .friend-created-link { border-color: #cbdad5; background: #f5f8f5; }
+.app-shell .friend-created-link b, .app-shell .friend-invite .text-button { color: #287477; }
+.app-shell .friend-created-link p, .app-shell .invitation-list small, .app-shell .invitation-list > p, .app-shell .friend-privacy { color: #687d7d; }
+.app-shell .invitation-list > article { border-color: #d4dfdc; background: #f9fbf9; }
+.app-shell .invitation-list b { color: #4b6469; }
+.app-shell .friends-error { border-color: #e5c49b; color: #9b6d2f; background: #fff7e9; }
+.app-shell .friend-summary article { border-color: #d3dfdd; background: #f9fbf9; }
+.app-shell .friend-summary b { color: #287477; }
+.app-shell .friend-summary span, .app-shell .friend-accept p, .app-shell .friend-detail-hero p { color: #61767a; }
+.app-shell .friend-meeting { border-color: #d2dfdb; background: #f8faf8; }
+.app-shell .friend-meeting-icon { background: #e4efed; }
+.app-shell .friend-meeting small, .app-shell .friend-meeting span > span { color: #667b7d; }
+.app-shell .friend-timeline > article { border-color: #d5dfdd; background: #f9fbf9; }
+.app-shell .timeline-dot { background: #e1eeeb; color: #287477; }
+.app-shell .friend-timeline article small, .app-shell .friend-timeline article p { color: #587174; }
+.app-shell .meeting-with-friend { border-color: #cbdad7; background: #eef4f1; color: #506e71; }
+.app-shell .friend-accept-highlight { border-color: #83aaa7; box-shadow: 0 0 0 3px #e2efec; }
+.app-shell .request-count { background: #347c80; }
+.app-shell .friend-request-card, .app-shell .outgoing-requests article { border-color: #cfddda; background: #fbfcfa; }
+.app-shell .friend-request-copy b, .app-shell .friend-profile-result > div b { color: #345359; }
+.app-shell .friend-request-actions .text-button, .app-shell .friend-profile-status { color: #397b7d; }
+.app-shell .friend-request-empty { border-color: #bfd2ce; background: #f2f7f4; }
+.app-shell .shared-invitations, .app-shell .friend-profile-search { color: #607678; }
+.app-shell .friend-profile-result { border-color: #cfddda; background: #fbfcfa; }
+.app-shell .friend-profile-result > div { color: #647a7d; }
