@@ -1012,6 +1012,7 @@ textarea { resize: vertical; line-height: 1.7; }
 .app-shell .stamp-3 { border-color: #00a4ed; background: #fff; }
 .app-shell .stamp-4 { border-color: #00a4ed; background: #fff; }
 .app-shell .passport-entry > span:first-child { background: #e7f0ee; }
+.app-shell .passport-chapter-camera { width: 38px; height: 38px; object-fit: contain; }
 .app-shell .experience-strip { border-color: #00a4ed; background: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); box-shadow: 0 5px 18px rgba(43,87,92,.08); }
 .app-shell .meta-icon { background: linear-gradient(135deg,#287d82,#477ca0); }
 .app-shell .outing-row { border-color: #00a4ed; border-left-color: #00a4ed; box-shadow: 0 7px 18px rgba(43,87,92,.08); }
