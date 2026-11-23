@@ -996,7 +996,7 @@ textarea { resize: vertical; line-height: 1.7; }
 .app-shell .result-n-3 { background: #d39231; }
 .app-shell .module-panel { border-color: #00a4ed; background-image: linear-gradient(145deg,#fff 0%,#f8faf8 62%,#eaf2ef 100%); box-shadow: 0 7px 18px rgba(43,87,92,.08); }
 .app-shell .module-panel .eyebrow { color: #287477; }
-.app-shell .passport-details .module-panel { background-image: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); }
+.app-shell .passport-details .module-panel { background-image: none; background-color: #fff; }
 .app-shell .capsule-intro { background: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); }
 .app-shell .capsule-doodle { background: #cfe2e3; box-shadow: 0 5px 0 #b5cecf; }
 .app-shell .capsule-doodle span { color: #d2942f; }
@@ -1006,11 +1006,11 @@ textarea { resize: vertical; line-height: 1.7; }
 .app-shell .capsule-memory:nth-child(2n) { background: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); }
 .app-shell .capsule-memory:nth-child(3n) { background: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); }
 .app-shell .passport-stats b { color: #287477; }
-.app-shell .stamp { border-color: #00a4ed; background: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); }
-.app-shell .stamp-1 { border-color: #00a4ed; background: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); }
-.app-shell .stamp-2 { border-color: #00a4ed; background: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); }
-.app-shell .stamp-3 { border-color: #00a4ed; background: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); }
-.app-shell .stamp-4 { border-color: #00a4ed; background: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); }
+.app-shell .stamp { border-color: #00a4ed; background: #fff; }
+.app-shell .stamp-1 { border-color: #00a4ed; background: #fff; }
+.app-shell .stamp-2 { border-color: #00a4ed; background: #fff; }
+.app-shell .stamp-3 { border-color: #00a4ed; background: #fff; }
+.app-shell .stamp-4 { border-color: #00a4ed; background: #fff; }
 .app-shell .passport-entry > span:first-child { background: #e7f0ee; }
 .app-shell .experience-strip { border-color: #00a4ed; background: linear-gradient(128deg,#f8d7ea 0%,#ead9f7 53%,#ccebf1 100%); box-shadow: 0 5px 18px rgba(43,87,92,.08); }
 .app-shell .meta-icon { background: linear-gradient(135deg,#287d82,#477ca0); }
