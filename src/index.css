@@ -1026,7 +1026,7 @@ textarea { resize: vertical; line-height: 1.7; }
 .app-shell .experience-menu { border-color: #b8cece; }
 .app-shell .experience-menu > button.active { background: linear-gradient(110deg,#e0eeec,#e7eef3); }
 .app-shell .experience-menu .new-experience-option { color: #176e78; }
-.app-shell .home-outings-dashboard { border-color: #d5ae2e; background: #f7f7f4; box-shadow: 0 9px 23px rgba(43,87,92,.1); }
+.app-shell .home-outings-dashboard { border-color: #d5ae2e; background: #fff; box-shadow: 0 9px 23px rgba(43,87,92,.1); }
 .app-shell .home-outings-heading .eyebrow { color: #287477; }
 .home-create-button, .home-outings-empty > button { background: #d41470; box-shadow: 0 4px 0 #a90d59; }
 .home-create-button:hover, .home-outings-empty > button:hover { background: #ed3187; }
@@ -1052,6 +1052,8 @@ textarea { resize: vertical; line-height: 1.7; }
 .home-quick-svg { width: 30px; height: 30px; display: block; overflow: visible; }
 .home-panel-icon .home-quick-svg { width: 31px; height: 31px; }
 .home-empty-art .home-quick-svg { width: 36px; height: 36px; }
+.app-shell .home-panel-icon, .app-shell .home-empty-art, .app-shell .home-quick-link .home-quick-icon { border: 2px solid #005bff; background: #fff; box-shadow: 0 3px 0 #b8dcff; }
+.app-shell .home-quick-link .home-quick-icon { border-radius: 11px; }
 .home-quick-arrow { color: #287477; }
 .app-shell .activity-card, .app-shell .play-card, .app-shell .friend-card, .app-shell .friend-request-card,
 .app-shell .outgoing-requests article, .app-shell .friend-profile-result, .app-shell .friend-meeting,
@@ -1064,4 +1066,7 @@ textarea { resize: vertical; line-height: 1.7; }
 .app-shell .story-progress > button:hover { background: #ed3187; }
 .app-shell .outing-mark, .app-shell .home-recent-mark { border: 2px solid #005bff; background: #fff; box-shadow: 0 4px 0 #b8dcff; }
 .app-shell .games-intro { border-color: #315f78; background: linear-gradient(112deg,#245e70 0%,#327b80 58%,#527b75 100%); }
+@media (max-width: 600px) {
+  .app-shell .home-quick-svg { width: 26px; height: 26px; }
+}
 
